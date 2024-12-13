@@ -1,0 +1,23 @@
+This file is based on or incorporates material from the projects listed below
+(collectively, "Third Party Code").
+
+CSI-Piemonte is not the original author of the Third Party Code.
+The original copyright notice and the license, under which CSI-Piemonte received such Third Party Code,
+are set forth below. You can find the original source code at the link set hereafter.
+Please refer to the accompanying credits file for additional notices.
+
+[MIT](https://opensource.org/licenses/MIT)\
+PyJWT,2.1.0
+redis,3.5.3
+six,1.16.0
+urllib3,1.26.6
+
+
+[BSD 3-clause](https://opensource.org/licenses/BSD-3-Clause)\
+oauthlib,3.1.1
+pycryptodome,3.12.0
+ujson,5.8.0
+
+[Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0)\
+pyopenssl,20.0.1
+requests,2.26.0

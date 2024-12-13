@@ -1,0 +1,13 @@
+*.py[co]
+__pycache__
+_build/
+*.so
+.project
+.pydevproject
+.idea/
+.manage.*
+.scannerwork/
+.vscode
+.hypothesis/
+.venv
+.trunk

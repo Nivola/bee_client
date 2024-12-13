@@ -1,0 +1,9 @@
+oauthlib==3.1.1
+pycryptodome==3.12.0
+pyjwt==2.1.0
+pyopenssl==20.0.1
+redis==3.5.3
+requests==2.26.0
+six==1.16.0
+ujson==5.8.0
+urllib3==1.26.6
