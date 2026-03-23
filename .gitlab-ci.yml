@@ -1,0 +1,46 @@
+---
+# OS
+image:
+  name: automation.site03.nivolapiemonte.it:5000/ol9-ansible-gitrunner:latest
+
+# Var
+variables:
+  ANSIBLE_FORCE_COLOR: 'true'
+
+workflow:
+  rules:
+    - if: $CI_COMMIT_TAG
+      changes:
+        - bee_client/VERSION
+      when: always
+    - when: never
+
+stages:
+  - deploy
+
+deploy_job:
+  stage: deploy
+  before_script:
+    - |
+      # Metadata
+      export version=`cat bee_client/VERSION | tr -d '\r\n'`
+      echo "Running deploy for ${CI_COMMIT_TAG}. Version: ${version}"
+    # ujson prerequisite
+    - dnf install gcc-c++ python3.12-devel.x86_64
+    # beecell prerequisite
+    - dnf install openldap-devel
+    # Twine
+    - pip3.12 install twine
+  script:
+    # build
+    - python3.12 setup.py sdist
+    - python3.12 -m twine check dist/*
+    # test
+    - pip3.12 install dist/bee_client-$version.tar.gz
+      -i http://automation.site03.nivolapiemonte.it:3141/pypi/stable/
+      --trusted-host automation.site03.nivolapiemonte.it
+    - python3.12 -c "import bee_client"
+    # deploy
+    - python3.12 -m twine upload -u pypi -p 'carusopass8' --repository-url http://automation.site03.nivolapiemonte.it:3141/pypi/stable dist/*
+  tags:
+    - business_setup

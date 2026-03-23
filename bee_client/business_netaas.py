@@ -1,14 +1,12 @@
 # SPDX-License-Identifier: EUPL-1.2
 #
-# (C) Copyright 2018-2024 CSI-Piemonte
+# (C) Copyright 2018-2026 CSI-Piemonte
 
-from beecell.password import random_password
 from urllib.parse import urlencode
-from beecell.simple import truncate
 from beecell.types.type_dict import dict_get
 from beecell.types.type_string import str2bool
 from .business import CmpBusinessAbstractService
-from .client import CmpBaseService, CmpApiManagerError, CmpApiClientError
+from .client import CmpBaseService, CmpApiManagerError, CmpApiClientError, CmpApiManager
 from .business_service import CmpBusinessServiceInstanceService, CmpBusinessServiceLinkService
 from .business_cpaas import CmpBusinessCpaasInstanceService
 
@@ -16,7 +14,7 @@ from .business_cpaas import CmpBusinessCpaasInstanceService
 class CmpBusinessNetaasService(CmpBusinessAbstractService):
     """Cmp business compute service"""
 
-    def __init__(self, manager):
+    def __init__(self, manager:CmpApiManager):
         CmpBaseService.__init__(self, manager)
 
         self.backup = None
@@ -72,7 +70,7 @@ class CmpBusinessNetaasVpcService(CmpBusinessAbstractService):
             "sort": {"field": "id", "order": "asc"},
             "vpcs": res.get("vpcSet"),
         }
-        self.logger.debug("get vpcs: %s" % truncate(res))
+        self.logger.debug("get vpcs: %s", res)
         return res
 
     def get(self, oid, **kwargs):
@@ -92,8 +90,8 @@ class CmpBusinessNetaasVpcService(CmpBusinessAbstractService):
         if len(res) > 0:
             res = res[0]
         else:
-            raise CmpApiManagerError("vpc %s does not exist" % oid)
-        self.logger.debug("get vpc%s: %s" % (oid, truncate(res)))
+            raise CmpApiManagerError(f"vpc {oid} does not exist")
+        self.logger.debug("get vpc%s: %s", oid, res)
         return res
 
 
@@ -149,7 +147,7 @@ class CmpBusinessNetaasSecurityGroupService(CmpBusinessAbstractService):
             "sort": {"field": "id", "order": "asc"},
             "security_groups": res.get("securityGroupInfo"),
         }
-        self.logger.debug("get security groups: %s" % truncate(res))
+        self.logger.debug("get security groups: %s", res)
         return res
 
     def get(self, oid, **kwargs):
@@ -172,8 +170,8 @@ class CmpBusinessNetaasSecurityGroupService(CmpBusinessAbstractService):
         if len(res) > 0:
             res = res[0]
         else:
-            raise CmpApiManagerError("security group %s does not exist" % oid)
-        self.logger.debug("get security group %s: %s" % (oid, truncate(res)))
+            raise CmpApiManagerError(f"security group {oid} does not exist")
+        self.logger.debug("get security group %s: %s", oid, res)
         return res
 
     def add(self, name, vpc, template=None, **kwargs):
@@ -193,7 +191,7 @@ class CmpBusinessNetaasSecurityGroupService(CmpBusinessAbstractService):
         uri = self.get_uri("computeservices/securitygroup/createsecuritygroup")
         res = self.api_post(uri, data={"security_group": data})
         res = dict_get(res, "CreateSecurityGroupResponse.groupId")
-        self.logger.debug("Create security group %s" % res)
+        self.logger.debug("Create security group %s", res)
         return res
 
     def delete(self, oid):
@@ -205,7 +203,7 @@ class CmpBusinessNetaasSecurityGroupService(CmpBusinessAbstractService):
         """
         uri = self.get_uri("computeservices/securitygroup/deletesecuritygroup")
         self.api_delete(uri, data={"security_group": {"GroupName": oid}})
-        self.logger.debug("delete security group %s" % oid)
+        self.logger.debug("delete security group %s", oid)
 
     def add_rule(self, oid, rule_type, proto=None, port=None, dest=None, source=None):
         """add security group rule
@@ -265,7 +263,7 @@ class CmpBusinessNetaasSecurityGroupService(CmpBusinessAbstractService):
             uri = self.get_uri("computeservices/securitygroup/authorizesecuritygroupingress")
             self.task_key = "AuthorizeSecurityGroupIngressResponse.nvl-activeTask"
         res = self.api_post(uri, data={"rule": data})
-        self.logger.debug("create security group %s rule" % oid)
+        self.logger.debug("create security group %s rule", oid)
         return res
 
     def del_rule(self, oid, rule_type, proto=None, port=None, dest=None, source=None):
@@ -326,7 +324,7 @@ class CmpBusinessNetaasSecurityGroupService(CmpBusinessAbstractService):
             uri = self.get_uri("computeservices/securitygroup/revokesecuritygroupingress")
             self.task_key = "RevokeSecurityGroupIngressResponse.nvl-activeTask"
         self.api_delete(uri, data={"rule": data})
-        self.logger.debug("delete security group %s rule" % oid)
+        self.logger.debug("delete security group %s rule", oid)
 
 
 class CmpBusinessNetaasGatewayService(CmpBusinessAbstractService):
@@ -375,8 +373,8 @@ class CmpBusinessNetaasGatewayService(CmpBusinessAbstractService):
         if len(res) > 0:
             res = res[0]
         else:
-            raise CmpApiManagerError("Internet gateway %s does not exist" % oid)
-        self.logger.debug("Get internet gateway %s: %s" % (oid, truncate(res)))
+            raise CmpApiManagerError(f"Internet gateway {oid} does not exist")
+        self.logger.debug("Get internet gateway %s: %s", oid, res)
         return res
 
 
@@ -451,9 +449,9 @@ class CmpBusinessNetaasLoadBalancerHealthMonitorService(CmpBusinessNetaasLoadBal
         res = self.api_get(uri, data=urlencode(data, doseq=True))
         res = dict_get(res, "DescribeHealthMonitorsResponse.healthMonitorSet")
         if len(res) != 1:
-            raise CmpApiManagerError("Health monitor %s does not exist or is not unique" % oid)
+            raise CmpApiManagerError(f"Health monitor {oid} does not exist or is not unique")
         res = res[0]
-        self.logger.debug("get health monitor %s: %s" % (oid, truncate(res)))
+        self.logger.debug("get health monitor %s: %s", oid, res)
         return res
 
     def load(self, account, **kvargs):
@@ -466,7 +464,7 @@ class CmpBusinessNetaasLoadBalancerHealthMonitorService(CmpBusinessNetaasLoadBal
         hm_name = kvargs.get("name")
         hm_id = self.do_check(account, hm_name, self.TYPE)
         if hm_id is not None:
-            raise Exception("health monitor %s already exists in account %s" % (hm_name, account))
+            raise Exception(f"health monitor {hm_name} already exists in account {account}")
         hm_data = {
             "owner-id": account,
             "Name": hm_name,
@@ -483,7 +481,7 @@ class CmpBusinessNetaasLoadBalancerHealthMonitorService(CmpBusinessNetaasLoadBal
         )
         res = self.api_post(uri, data={"health_monitor": hm_data})
         hm_id = dict_get(res, "CreateHealthMonitorResponse.HealthMonitor.healthMonitorId")
-        print("imported health monitor: %s" % hm_id)
+        print(f"imported health monitor: {hm_id}")
         return hm_id
 
 
@@ -502,7 +500,7 @@ class CmpBusinessNetaasLoadBalancerTargetGroupService(CmpBusinessNetaasLoadBalan
         tg_name = kvargs.get("name")
         tg_id = self.do_check(account, tg_name, self.TYPE)
         if tg_id is not None:
-            raise Exception("target group %s already exists in account %s" % (tg_name, account))
+            raise Exception(f"target group {tg_name} already exists in account {account}")
         tg_data = {
             "owner-id": account,
             "Name": kvargs.get("name"),
@@ -517,7 +515,7 @@ class CmpBusinessNetaasLoadBalancerTargetGroupService(CmpBusinessNetaasLoadBalan
         )
         res = self.api_post(uri, data={"target_group": tg_data})
         tg_id = dict_get(res, "CreateTargetGroupResponse.TargetGroup.targetGroupId")
-        print("imported target group: %s" % tg_id)
+        print(f"imported target group: {tg_id}")
         return tg_id
 
     def register_targets(self, account, oid, members, **kvargs):
@@ -550,7 +548,7 @@ class CmpBusinessNetaasLoadBalancerTargetGroupService(CmpBusinessNetaasLoadBalan
         uri = self.get_uri(
             "networkservices/loadbalancer/targetgroup/registertargets", preferred_version=self.VERSION, **kvargs
         )
-        res = self.api_put(uri, data={"target_group": targets_data})
+        self.api_put(uri, data={"target_group": targets_data})
         if len(target_ids) == 0:
             print("no target to register")
         else:
@@ -584,7 +582,7 @@ class CmpBusinessNetaasLoadBalancerTargetGroupService(CmpBusinessNetaasLoadBalan
             "networkservices/loadbalancer/targetgroup/deletetargetgroup", preferred_version=self.VERSION, **kvargs
         )
         self.api_delete(uri, data={"targetGroupId": str(oid)})
-        self.logger.debug("delete lb target group %s" % oid)
+        self.logger.debug("delete lb target group %s", oid)
 
 
 class CmpBusinessNetaasLoadBalancerListenerService(CmpBusinessNetaasLoadBalancerAbstractService):
@@ -634,9 +632,9 @@ class CmpBusinessNetaasLoadBalancerListenerService(CmpBusinessNetaasLoadBalancer
         res = self.api_get(uri, data=urlencode(data, doseq=True))
         res = dict_get(res, "DescribeListenersResponse.listenerSet")
         if len(res) != 1:
-            raise CmpApiManagerError("listener %s does not exist or is not unique" % oid)
+            raise CmpApiManagerError(f"listener {oid} does not exist or is not unique")
         res = res[0]
-        self.logger.debug("get listener %s: %s" % (oid, truncate(res)))
+        self.logger.debug("get listener %s: %s", oid, res)
         return res
 
     def load(self, account, **kvargs):
@@ -650,7 +648,7 @@ class CmpBusinessNetaasLoadBalancerListenerService(CmpBusinessNetaasLoadBalancer
         li_name = li_name.replace("_", "-")
         li_id = self.do_check(account, li_name, self.TYPE)
         if li_id is not None:
-            raise Exception("listener %s already exists in account %s" % (li_name, account))
+            raise Exception(f"listener {li_name} already exists in account {account}")
         li_data = {
             "owner-id": account,
             "Name": li_name,
@@ -670,7 +668,7 @@ class CmpBusinessNetaasLoadBalancerListenerService(CmpBusinessNetaasLoadBalancer
         )
         res = self.api_post(uri, data={"listener": li_data})
         li_id = dict_get(res, "CreateListenerResponse.Listener.listenerId")
-        print("imported listener: %s" % li_id)
+        print(f"imported listener: {li_id}")
         return li_id
 
     def delete(self, oid, **kwargs):
@@ -684,7 +682,7 @@ class CmpBusinessNetaasLoadBalancerListenerService(CmpBusinessNetaasLoadBalancer
             "networkservices/loadbalancer/listener/deletelistener", preferred_version=self.VERSION, **kwargs
         )
         self.api_delete(uri, data={"listenerId": str(oid)})
-        self.logger.debug("delete lb listener %s" % oid)
+        self.logger.debug("delete lb listener %s", oid)
 
 
 class CmpBusinessNetaasLoadBalancerService(CmpBusinessNetaasLoadBalancerAbstractService):
@@ -708,8 +706,8 @@ class CmpBusinessNetaasLoadBalancerService(CmpBusinessNetaasLoadBalancerAbstract
         if len(res) > 0:
             res = res[0]
         else:
-            raise CmpApiManagerError("load balancer %s not found" % oid)
-        self.logger.debug("get load balancer %s: %s" % (oid, truncate(res)))
+            raise CmpApiManagerError(f"load balancer {oid} not found")
+        self.logger.debug("get load balancer %s: %s", oid, res)
         return res
 
     def load(self, account, **kvargs):
@@ -722,7 +720,7 @@ class CmpBusinessNetaasLoadBalancerService(CmpBusinessNetaasLoadBalancerAbstract
         lb_name = kvargs.get("name")
         lb_id = self.do_check(account, lb_name, self.TYPE)
         if lb_id is not None:
-            raise Exception("load balancer %s already exists in account %s" % (lb_name, account))
+            raise Exception(f"load balancer {lb_name} already exists in account {account}")
         lb_data = {
             "owner-id": account,
             "Name": lb_name,
@@ -741,7 +739,7 @@ class CmpBusinessNetaasLoadBalancerService(CmpBusinessNetaasLoadBalancerAbstract
         uri = self.get_uri("networkservices/loadbalancer/importloadbalancer", preferred_version=self.VERSION, **kvargs)
         res = self.api_post(uri, data={"load_balancer": lb_data})
         lb_id = dict_get(res, "ImportLoadBalancerResponse.LoadBalancer.loadBalancerId")
-        print("imported load balancer: %s" % lb_id)
+        print(f"imported load balancer: {lb_id}")
         return lb_id
 
     def delete(self, oid, no_linked_objs=False, **kvargs):
@@ -754,7 +752,7 @@ class CmpBusinessNetaasLoadBalancerService(CmpBusinessNetaasLoadBalancerAbstract
         """
         uri = self.get_uri("networkservices/loadbalancer/deleteloadbalancer", preferred_version=self.VERSION, **kvargs)
         self.api_delete(uri, data={"loadBalancerId": str(oid), "no_linked_objs": no_linked_objs})
-        self.logger.debug("delete load balancer %s" % oid)
+        self.logger.debug("delete load balancer %s", oid)
 
     def get_listener(self, oid):
         """Get listener linked to load balancer

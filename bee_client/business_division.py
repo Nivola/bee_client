@@ -1,17 +1,15 @@
 # SPDX-License-Identifier: EUPL-1.2
 #
-# (C) Copyright 2018-2024 CSI-Piemonte
+# (C) Copyright 2018-2026 CSI-Piemonte
 
-from beecell.simple import truncate
 from .business import CmpBusinessAbstractService
 from .business_common import CmpBusinessAuthService
-from .client import CmpBaseService
-
+from .client import CmpBaseService, CmpApiManager
 
 class CmpBusinessDivisionService(CmpBusinessAbstractService):
     """Cmp business div"""
 
-    def __init__(self, manager):
+    def __init__(self, manager: CmpApiManager):
         CmpBaseService.__init__(self, manager)
 
         self.auth = CmpBusinessDivisionAuthService(self.manager)
@@ -53,7 +51,7 @@ class CmpBusinessDivisionService(CmpBusinessAbstractService):
         data = self.format_paginated_query(kwargs, params, mappings=mappings, aliases=aliases)
         uri = self.get_uri("divisions")
         res = self.api_get(uri, data=data)
-        self.logger.debug("get divisions: %s" % truncate(res))
+        self.logger.debug("get divisions: %s", res)
         return res
 
     def get(self, oid):
@@ -63,9 +61,9 @@ class CmpBusinessDivisionService(CmpBusinessAbstractService):
         :return: div
         :raise CmpApiClientError:
         """
-        uri = self.get_uri("divisions/%s" % oid)
+        uri = self.get_uri(f"divisions/{oid}")
         res = self.api_get(uri)
-        self.logger.debug("get division %s: %s" % (oid, truncate(res)))
+        self.logger.debug("get division %s: %s", oid, res)
         return res
 
     def add(self, name, organization, **kwargs):
@@ -88,7 +86,7 @@ class CmpBusinessDivisionService(CmpBusinessAbstractService):
         data.update(self.format_request_data(kwargs, ["desc", "contact", "email", "postaladdress", "price_list"]))
         uri = self.get_uri("divisions")
         res = self.api_post(uri, data={"division": data})
-        self.logger.debug("Create division %s" % name)
+        self.logger.debug("Create division %s", name)
         return res
 
     def update(self, oid, **kwargs):
@@ -106,9 +104,9 @@ class CmpBusinessDivisionService(CmpBusinessAbstractService):
         :raises CmpApiClientError: raise :class:`CmpApiClientError`
         """
         data = self.format_request_data(kwargs, ["name", "desc", "contact", "email", "postaladdress", "price_list"])
-        uri = self.get_uri("divisions/%s" % oid)
+        uri = self.get_uri(f"divisions/{oid}")
         res = self.api_put(uri, data={"division": data})
-        self.logger.debug("Update division %s" % oid)
+        self.logger.debug("Update division %s", oid)
         return res
 
     def patch(self, oid):
@@ -118,9 +116,9 @@ class CmpBusinessDivisionService(CmpBusinessAbstractService):
         :return:
         :raises CmpApiClientError: raise :class:`CmpApiClientError`
         """
-        uri = self.get_uri("divisions/%s" % oid)
+        uri = self.get_uri(f"divisions/{oid}")
         self.api_patch(uri, data={"division": {}})
-        self.logger.debug("patch division %s" % oid)
+        self.logger.debug("patch division %s", oid)
 
     def delete(self, oid):
         """Delete division
@@ -131,10 +129,10 @@ class CmpBusinessDivisionService(CmpBusinessAbstractService):
         :return:
         :raises CmpApiClientError: raise :class:`CmpApiClientError`
         """
-        uri = self.get_uri("divisions/%s" % oid)
+        uri = self.get_uri(f"divisions/{oid}")
         data = ""
         self.api_delete(uri, data=data)
-        self.logger.debug("delete division %s" % oid)
+        self.logger.debug("delete division %s", oid)
 
 
 class CmpBusinessDivisionAuthService(CmpBusinessAuthService):

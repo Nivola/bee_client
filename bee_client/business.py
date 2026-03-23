@@ -1,9 +1,8 @@
 # SPDX-License-Identifier: EUPL-1.2
 #
-# (C) Copyright 2018-2024 CSI-Piemonte
+# (C) Copyright 2018-2026 CSI-Piemonte
 
-from beecell.simple import truncate
-from .client import CmpBaseService
+from .client import CmpBaseService, CmpApiManager
 
 
 class CmpBusinessAbstractService(CmpBaseService):
@@ -17,7 +16,7 @@ class CmpBusinessAbstractService(CmpBaseService):
 class CmpBusinessService(CmpBusinessAbstractService):
     """Cmp business service"""
 
-    def __init__(self, manager):
+    def __init__(self, manager:CmpApiManager):
         CmpBaseService.__init__(self, manager)
 
         from .business_service import CmpBusinessServiceService

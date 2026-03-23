@@ -1,10 +1,8 @@
 # SPDX-License-Identifier: EUPL-1.2
 #
-# (C) Copyright 2018-2024 CSI-Piemonte
+# (C) Copyright 2018-2026 CSI-Piemonte
 
-from beecell.simple import jsonDumps
-
-from .client import CmpBaseService
+from .client import CmpBaseService,CmpApiManager
 
 
 class CmpCatalogAbstractService(CmpBaseService):
@@ -15,13 +13,13 @@ class CmpCatalogAbstractService(CmpBaseService):
     VERSION = "v1.0"
 
     def get_uri(self, uri):
-        return "/%s/%s/%s" % (self.VERSION, self.PREFIX, uri)
+        return f"/{self.VERSION}/{self.PREFIX}/{uri}"
 
 
 class CmpCatalogService(CmpCatalogAbstractService):
     """Cmp catalog service"""
 
-    def __init__(self, manager):
+    def __init__(self, manager:CmpApiManager):
         CmpBaseService.__init__(self, manager)
 
     #
@@ -49,9 +47,9 @@ class CmpCatalogService(CmpCatalogAbstractService):
         :return:
         :raises CmpApiClientError: raise :class:`CmpApiClientError`
         """
-        uri = self.get_uri("catalogs/%s" % catalog_id)
+        uri = self.get_uri(f"catalogs/{catalog_id}")
         res = self.api_get(uri, data="").get("catalog", {})
-        self.logger.debug("Get catalog %s" % catalog_id)
+        self.logger.debug("Get catalog %s", catalog_id)
         return res
 
     def create_catalog(self, name, zone):
@@ -62,10 +60,10 @@ class CmpCatalogService(CmpCatalogAbstractService):
         :return:
         :raises CmpApiClientError: raise :class:`CmpApiClientError`
         """
-        data = {"name": name, "desc": "catalog %s" % name, "zone": zone}
+        data = {"name": name, "desc": f"catalog {name}", "zone": zone}
         uri = self.get_uri("catalogs")
         res = self.api_post(uri, data={"catalog": data})
-        self.logger.debug("Create catalog %s" % name)
+        self.logger.debug("Create catalog %s", name)
         return res
 
     def delete_catalog(self, catalog_id):
@@ -75,9 +73,9 @@ class CmpCatalogService(CmpCatalogAbstractService):
         :return:
         :raises CmpApiClientError: raise :class:`CmpApiClientError`
         """
-        uri = self.get_uri("catalogs/%s" % catalog_id)
+        uri = self.get_uri(f"catalogs/{catalog_id}")
         self.api_delete(uri, data="")
-        self.logger.debug("Delete catalog %s" % catalog_id)
+        self.logger.debug("Delete catalog %s", catalog_id)
 
     #
     # endpoint request
@@ -104,9 +102,9 @@ class CmpCatalogService(CmpCatalogAbstractService):
         :return:
         :raises CmpApiClientError: raise :class:`CmpApiClientError`
         """
-        uri = self.get_uri("endpoints/%s" % endpoint_id)
+        uri = self.get_uri(f"endpoints/{endpoint_id}")
         res = self.api_get(uri, data="").get("endpoints", [])
-        self.logger.debug("Get endpoint %s" % endpoint_id)
+        self.logger.debug("Get endpoint %s", endpoint_id)
         return res
 
     def create_endpoint(self, catalog_id, name, service, uri, uid=None, seckey=None):
@@ -125,7 +123,7 @@ class CmpCatalogService(CmpCatalogAbstractService):
             "endpoint": {
                 "catalog": catalog_id,
                 "name": name,
-                "desc": "Endpoint %s" % name,
+                "desc": f"Endpoint {name}",
                 "service": service,
                 "uri": uri,
                 "active": True,
@@ -133,7 +131,7 @@ class CmpCatalogService(CmpCatalogAbstractService):
         }
         uri = self.get_uri("endpoints")
         res = self.api_post(uri, data=data)
-        self.logger.debug("Create endpoint %s" % name)
+        self.logger.debug("Create endpoint %s", name)
         return res
 
     def update_endpoint(self, oid, catalog_id=None, name=None, service=None, uri=None):
@@ -158,9 +156,9 @@ class CmpCatalogService(CmpCatalogAbstractService):
             data["uri"] = uri
 
         data = {"endpoint": data}
-        uri = self.get_uri("endpoints/%s" % oid)
+        uri = self.get_uri(f"endpoints/{oid}")
         res = self.api_put(uri, data=data)
-        self.logger.debug("Create endpoint %s" % name)
+        self.logger.debug("Create endpoint %s", name)
         return res
 
     def delete_endpoint(self, endpoint_id):
@@ -172,6 +170,6 @@ class CmpCatalogService(CmpCatalogAbstractService):
         :return:
         :raises CmpApiClientError: raise :class:`CmpApiClientError`
         """
-        uri = self.get_uri("endpoints/%s" % endpoint_id)
+        uri = self.get_uri(f"endpoints/{endpoint_id}")
         self.api_delete(uri, data="")
-        self.logger.debug("Delete endpoint %s" % endpoint_id)
+        self.logger.debug("Delete endpoint %s", endpoint_id)

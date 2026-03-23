@@ -1,9 +1,7 @@
 # SPDX-License-Identifier: EUPL-1.2
 #
-# (C) Copyright 2018-2024 CSI-Piemonte
+# (C) Copyright 2018-2026 CSI-Piemonte
 
-from beecell.types.type_dict import dict_get
-from beecell.types.type_string import truncate
 from .client import CmpBaseService
 from .resource import CmpResourceAbstractService
 
@@ -18,7 +16,9 @@ class CmpResourceProviderService(CmpResourceAbstractService):
         self.instance = CmpResourceProviderInstanceService(self.manager)
         self.gateway = CmpResourceProviderGatewayService(self.manager)
         self.load_balancer = CmpResourceProviderLoadBalancerService(self.manager)
+        self.site = CmpResourceProviderSiteService(self.manager)
         self.site_network = CmpResourceProviderSiteNetworkService(self.manager)
+        self.share_v2 = CmpResourceProviderShareV2Service(self.manager)
 
 
 class CmpResourceProviderVpcService(CmpResourceAbstractService):
@@ -34,9 +34,9 @@ class CmpResourceProviderVpcService(CmpResourceAbstractService):
         :raise CmpApiClientError:
         """
 
-        uri = self.get_uri("provider/vpcs/%s" % oid, preferred_version=self.VERSION, **kwargs)
+        uri = self.get_uri(f"provider/vpcs/{oid}", preferred_version=self.VERSION, **kwargs)
         res = self.api_get(uri).get("vpc", {})
-        self.logger.debug("get vpc %s: %s" % (oid, truncate(res)))
+        self.logger.debug("get vpc %s: %s", oid, res)
         return res
 
 
@@ -50,9 +50,9 @@ class CmpResourceProviderInstanceService(CmpResourceAbstractService):
         :return: instance
         :raise CmpApiClientError:
         """
-        uri = self.get_uri("provider/instances/%s" % oid, preferred_version=self.VERSION, **kwargs)
+        uri = self.get_uri(f"provider/instances/{oid}", preferred_version=self.VERSION, **kwargs)
         res = self.api_get(uri).get("instance", {})
-        self.logger.debug("get instance %s: %s" % (oid, truncate(res)))
+        self.logger.debug("get instance %s: %s", oid, res)
         return res
 
     def load(self, container, name, physical_resource, pwd, image, **kwargs):
@@ -79,16 +79,16 @@ class CmpResourceProviderInstanceService(CmpResourceAbstractService):
         data["configs"].update(kwargs)
         uri = self.get_uri("entities/import", preferred_version=self.VERSION, **kwargs)
         res = self.api_post(uri, data={"resource": data}).get("uuid", None)
-        self.logger.debug("import entity: %s" % res)
+        self.logger.debug("import entity: %s", res)
 
     def del_cache(self, oid, **kwargs):
         """Delete resource provider instance cache
 
         :return:
         """
-        uri = self.get_uri("entities/%s/cache" % oid, preferred_version=self.VERSION, **kwargs)
+        uri = self.get_uri(f"entities/{oid}/cache", preferred_version=self.VERSION, **kwargs)
         res = self.api_put(uri)
-        self.logger.debug("delete cache for provider instance: %s" % res.get("uuid"))
+        self.logger.debug("delete cache for provider instance: %s", res.get("uuid"))
 
     def stack_create_from_vm(
         self,
@@ -132,9 +132,9 @@ class CmpResourceProviderGatewayService(CmpResourceAbstractService):
         :return: gateway
         :raise CmpApiClientError:
         """
-        uri = self.get_uri("provider/gateways/%s" % oid, preferred_version=self.VERSION, **kwargs)
+        uri = self.get_uri(f"provider/gateways/{oid}", preferred_version=self.VERSION, **kwargs)
         res = self.api_get(uri).get("gateway", {})
-        self.logger.debug("get gateway %s: %s" % (oid, truncate(res)))
+        self.logger.debug("get gateway %s: %s", oid, res)
         return res
 
 
@@ -148,9 +148,9 @@ class CmpResourceProviderLoadBalancerService(CmpResourceAbstractService):
         :return: load balancer
         :raise CmpApiClientError:
         """
-        uri = self.get_uri("provider/loadbalancers/%s" % oid, preferred_version=self.VERSION, **kwargs)
+        uri = self.get_uri(f"provider/loadbalancers/{oid}", preferred_version=self.VERSION, **kwargs)
         res = self.api_get(uri).get("load_balancer", {})
-        self.logger.debug("get load balancer %s: %s" % (oid, truncate(res)))
+        self.logger.debug("get load balancer %s: %s", oid, res)
         return res
 
     def load(self, container, name, **kwargs):
@@ -177,7 +177,23 @@ class CmpResourceProviderLoadBalancerService(CmpResourceAbstractService):
         uri = self.get_uri("entities/import", preferred_version=self.VERSION, **kwargs)
         res = self.api_post(uri, data={"resource": data})
         res = res.get("uuid")
-        print("imported compute load balancer: %s" % res)
+        print(f"imported compute load balancer: {res}")
+        return res
+
+
+class CmpResourceProviderSiteService(CmpResourceAbstractService):
+    """Cmp resource provider site  service"""
+
+    def get(self, oid, **kwargs):
+        """get site
+
+        :param oid: site id or uuid
+        :return: gateway
+        :raise CmpApiClientError:
+        """
+        uri = self.get_uri(f"provider/sites/{oid}", preferred_version="v1.0", **kwargs)
+        res = self.api_get(uri).get("site", {})
+        self.logger.debug("get site %s: %s", oid, res)
         return res
 
 
@@ -191,7 +207,22 @@ class CmpResourceProviderSiteNetworkService(CmpResourceAbstractService):
         :return: gateway
         :raise CmpApiClientError:
         """
-        uri = self.get_uri("provider/site_networks/%s" % oid, preferred_version="v2.0", **kwargs)
+        uri = self.get_uri(f"provider/site_networks/{oid}", preferred_version="v2.0", **kwargs)
         res = self.api_get(uri).get("site_network", {})
-        self.logger.debug("get site-network %s: %s" % (oid, truncate(res)))
+        self.logger.debug("get site-network %s: %s", oid, res)
+        return res
+
+class CmpResourceProviderShareV2Service(CmpResourceAbstractService):
+    """Cmp resource provider share v2 service"""
+
+    def get(self, oid, **kwargs):
+        """get share v2
+
+        :param oid: share v2 id or uuid
+        :return: gateway
+        :raise CmpApiClientError:
+        """
+        uri = self.get_uri(f"provider/shares/{oid}", preferred_version="v2.0", **kwargs)
+        res = self.api_get(uri).get("share", {})
+        self.logger.debug("get share %s: %s", oid, res)
         return res

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # SPDX-License-Identifier: EUPL-1.2
 #
-# (C) Copyright 2018-2024 CSI-Piemonte
+# (C) Copyright 2018-2026 CSI-Piemonte
 
 from setuptools import setup
 from setuptools.command.install import install as _install
@@ -23,15 +23,16 @@ class install(_install):
 
 
 def load_requires():
-    with open("./MANIFEST.md") as f:
+    with open("./MANIFEST-ansible.md", encoding='utf-8') as f:
         requires = f.read()
     return requires
 
 
 def load_version():
-    with open("./bee_client/VERSION") as f:
-        version = f.read()
-    return version
+    l_version = None
+    with open("./bee_client/VERSION", encoding="utf-8") as f:
+        l_version = f.read().rstrip()
+    return l_version
 
 
 if __name__ == "__main__":
@@ -41,6 +42,7 @@ if __name__ == "__main__":
         version=version,
         description="Platform client",
         long_description="Platform client",
+        long_description_content_type="text/plain",
         author="CSI Piemonte",
         author_email="nivola.engineering@csi.it",
         license="EUPL-1.2",
@@ -52,13 +54,13 @@ if __name__ == "__main__":
         namespace_packages=[],
         py_modules=["bee_client.__init__"],
         classifiers=[
-            "Development Status :: %s" % version,
+            f"Development Status :: {version}",
             "Programming Language :: Python",
         ],
         entry_points={},
-        data_files=[],
-        package_dir={"bee_clinet": "bee_client"},
+        package_dir={"bee_client": "bee_client"},
         package_data={"bee_client": ["VERSION"]},
+        data_files=[('bee_client', ["MANIFEST.md", "MANIFEST-ansible.md"])],
         install_requires=load_requires(),
         dependency_links=[],
         zip_safe=True,

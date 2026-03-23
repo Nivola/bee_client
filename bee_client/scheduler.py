@@ -1,9 +1,8 @@
 # SPDX-License-Identifier: EUPL-1.2
 #
-# (C) Copyright 2018-2024 CSI-Piemonte
+# (C) Copyright 2018-2026 CSI-Piemonte
 
-from beecell.types.type_string import truncate
-from .client import CmpBaseService, CmpApiClientError
+from .client import CmpBaseService, CmpApiClientError, CmpApiManager
 
 
 class CmpSchedulerAbstractService(CmpBaseService):
@@ -30,13 +29,13 @@ class CmpSchedulerAbstractService(CmpBaseService):
         self.VERSION = endpoint.get("version")
 
     def get_uri(self, uri):
-        return "/%s/%s/%s" % (self.VERSION, self.PREFIX, uri)
+        return f"/{self.VERSION}/{self.PREFIX}/{uri}"
 
 
 class CmpSchedulerService(CmpSchedulerAbstractService):
     """Cmp scheduler service"""
 
-    def __init__(self, manager):
+    def __init__(self, manager:CmpApiManager):
         CmpBaseService.__init__(self, manager)
 
         self.task = CmpSchedulerTaskService(self.manager)
@@ -54,12 +53,12 @@ class CmpSchedulerTaskService(CmpSchedulerAbstractService):
         :return: list of task instances
         :raise CmpApiClientError:
         """
-        params = ["name", "objid"]
+        params = ["name", "objid", "parentonly"]
         mappings = {"name": lambda n: "%" + n + "%"}
         data = self.format_paginated_query(kwargs, params, mappings=mappings)
         uri = self.get_uri("worker/tasks")
         res = self.api_get(uri, data=data)
-        self.logger.debug("get task instances: %s" % truncate(res))
+        self.logger.debug("get task instances: %s", res)
         return res
 
     def get(self, oid):
@@ -69,9 +68,9 @@ class CmpSchedulerTaskService(CmpSchedulerAbstractService):
         :return: task instance
         :raise CmpApiClientError:
         """
-        uri = self.get_uri("worker/tasks/%s" % oid)
+        uri = self.get_uri(f"worker/tasks/{oid}")
         res = self.api_get(uri).get("task_instance", {})
-        self.logger.debug("get task instance %s: %s" % (oid, truncate(res)))
+        self.logger.debug("get task instance %s: %s", oid, res)
         return res
 
     def get_trace(self, oid):
@@ -81,9 +80,9 @@ class CmpSchedulerTaskService(CmpSchedulerAbstractService):
         :return: task instance trace
         :raise CmpApiClientError:
         """
-        uri = self.get_uri("worker/tasks/%s/trace" % oid)
+        uri = self.get_uri(f"worker/tasks/{oid}/trace")
         res = self.api_get(uri).get("task_trace", {})
-        self.logger.debug("get task instance %s trace: %s" % (oid, truncate(res)))
+        self.logger.debug("get task instance %s trace: %s", oid, res)
         return res
 
     def get_log(self, oid, **kwargs):
@@ -98,9 +97,9 @@ class CmpSchedulerTaskService(CmpSchedulerAbstractService):
         params = ["size", "page"]
         mappings = {}
         data = self.format_paginated_query(kwargs, params, mappings=mappings)
-        uri = self.get_uri("worker/tasks/%s/log" % oid)
+        uri = self.get_uri(f"worker/tasks/{oid}/log")
         res = self.api_get(uri, data=data).get("task_log", {})
-        self.logger.debug("get task instance %s log: %s" % (oid, truncate(res)))
+        self.logger.debug("get task instance %s log: %s", oid, res)
         return res
 
     def get_definitions(self):
@@ -111,7 +110,7 @@ class CmpSchedulerTaskService(CmpSchedulerAbstractService):
         """
         uri = self.get_uri("worker/tasks/definitions")
         res = self.api_get(uri).get("task_definitions", {})
-        self.logger.debug("get task definitions: %s" % truncate(res))
+        self.logger.debug("get task definitions: %s", res)
         return res
 
     def get_status(self, oid):
@@ -121,9 +120,9 @@ class CmpSchedulerTaskService(CmpSchedulerAbstractService):
         :return: task definitions
         :raise CmpApiClientError:
         """
-        uri = self.get_uri("worker/tasks/%s/status" % oid)
+        uri = self.get_uri(f"worker/tasks/{oid}/status")
         res = self.api_get(uri).get("task_instance", {})
-        self.logger.debug("get task instance %s status: %s" % (oid, truncate(res)))
+        self.logger.debug("get task instance %s status: %s", oid, res)
         return res
 
     def run_test1(self):
@@ -135,7 +134,7 @@ class CmpSchedulerTaskService(CmpSchedulerAbstractService):
         uri = self.get_uri("worker/tasks/test")
         data = {"x": 2, "y": 234, "numbers": [2, 78, 45, 90], "mul_numbers": []}
         res = self.api_post(uri, data=data)
-        self.logger.debug("run test task 1: %s" % truncate(res))
+        self.logger.debug("run test task 1: %s", res)
         return res
 
     def run_test2(self):
@@ -147,7 +146,7 @@ class CmpSchedulerTaskService(CmpSchedulerAbstractService):
         uri = self.get_uri("worker/tasks/test2")
         data = ""
         res = self.api_post(uri, data=data)
-        self.logger.debug("run test task 2: %s" % truncate(res))
+        self.logger.debug("run test task 2: %s", res)
         return res
 
     def run_test3(self):
@@ -159,7 +158,7 @@ class CmpSchedulerTaskService(CmpSchedulerAbstractService):
         uri = self.get_uri("worker/tasks/test3")
         data = {"x": 2, "y": 234}
         res = self.api_post(uri, data=data)
-        self.logger.debug("run test task 3: %s" % truncate(res))
+        self.logger.debug("run test task 3: %s", res)
         return res
 
 
@@ -178,7 +177,7 @@ class CmpSchedulerScheduleService(CmpSchedulerAbstractService):
         data = self.format_paginated_query(kwargs, params, mappings=mappings)
         uri = self.get_uri("scheduler/entries")
         res = self.api_get(uri, data=data)
-        self.logger.debug("get schedule entries: %s" % truncate(res))
+        self.logger.debug("get schedule entries: %s", res)
         return res
 
     def get(self, oid):
@@ -188,9 +187,9 @@ class CmpSchedulerScheduleService(CmpSchedulerAbstractService):
         :return: container
         :raise CmpApiClientError:
         """
-        uri = self.get_uri("scheduler/entries/%s" % oid)
+        uri = self.get_uri(f"scheduler/entries/{oid}")
         res = self.api_get(uri).get("schedule", {})
-        self.logger.debug("get schedule entry %s: %s" % (oid, truncate(res)))
+        self.logger.debug("get schedule entry %s: %s", oid, res)
         return res
 
     def add(self, name, task, schedule, args, **kwargs):
@@ -211,7 +210,7 @@ class CmpSchedulerScheduleService(CmpSchedulerAbstractService):
         data = {"name": name, "task": task, "schedule": schedule, "args": [args, "*"]}
         uri = self.get_uri("containers")
         res = self.api_post(uri, data={"schedule": data})
-        self.logger.debug("Create schedule entry %s" % res.get("name"))
+        self.logger.debug("Create schedule entry %s", res.get("name"))
         return res
 
     def delete(self, oid):
@@ -221,6 +220,6 @@ class CmpSchedulerScheduleService(CmpSchedulerAbstractService):
         :return:
         :raises CmpApiClientError: raise :class:`CmpApiClientError`
         """
-        uri = self.get_uri("scheduler/entries/%s" % oid)
+        uri = self.get_uri(f"scheduler/entries/{oid}")
         self.api_delete(uri, data="")
-        self.logger.debug("delete schedule entry %s" % oid)
+        self.logger.debug("delete schedule entry %s", oid)

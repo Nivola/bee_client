@@ -1,26 +1,23 @@
 # SPDX-License-Identifier: EUPL-1.2
 #
-# (C) Copyright 2018-2024 CSI-Piemonte
+# (C) Copyright 2018-2026 CSI-Piemonte
 
-import ujson as json
+from datetime import datetime, timedelta
+from time import time
 from logging import getLogger
+import urllib.parse as urlparse
+import ujson as json
 from oauthlib.oauth2.rfc6749.clients.base import Client
 from oauthlib.oauth2.rfc6749.parameters import prepare_token_request
 from oauthlib.oauth2.rfc6749 import errors, tokens, utils
 from requests_oauthlib.oauth2_session import OAuth2Session
 import jwt
-from datetime import datetime, timedelta
-from time import time
 
-try:
-    import urlparse
-except ImportError:
-    import urllib.parse as urlparse
 
 logger = getLogger(__name__)
 
 
-class GrantType(object):
+class GrantType():
     AUTHORIZATION_CODE = "authorization_code"
     IMPLICIT = "implicit"
     RESOURCE_OWNER_PASSWORD_CREDENTIAL = "resource_owner_password_credentials"
@@ -144,5 +141,5 @@ class JWTClient(Client):
         encoded = jwt.encode(claims, private_key, algorithm="RS512")
         res = client.prepare_request_body(assertion=encoded, client_id=client_id, scope=client_scope)
         token = oauth.fetch_token(token_url=client_token_uri, body=res, verify=False)
-        logger.info("Create new oauth2 jwt token for client %s and sub %s" % (client_id, sub))
+        logger.info("Create new oauth2 jwt token for client %s and sub %s", client_id, sub)
         return token

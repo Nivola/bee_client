@@ -1,18 +1,18 @@
 # SPDX-License-Identifier: EUPL-1.2
 #
-# (C) Copyright 2018-2024 CSI-Piemonte
+# (C) Copyright 2018-2026 CSI-Piemonte
 
 from beecell.password import random_password
 from beecell.simple import truncate
 from beecell.types.type_dict import dict_get
 from .business import CmpBusinessAbstractService
-from .client import CmpBaseService, CmpApiManagerError
+from .client import CmpBaseService, CmpApiManagerError, CmpApiManager
 
 
 class CmpBusinessCpaasService(CmpBusinessAbstractService):
     """Cmp business compute service"""
 
-    def __init__(self, manager):
+    def __init__(self, manager:CmpApiManager):
         CmpBaseService.__init__(self, manager)
 
         self.backup = None
@@ -85,7 +85,7 @@ class CmpBusinessCpaasInstanceService(CmpBusinessAbstractService):
             "sort": {"field": "id", "order": "asc"},
             "instances": res.get("instancesSet"),
         }
-        self.logger.debug("get virtual machines: %s" % truncate(res))
+        self.logger.debug("get virtual machines: %s", res)
         return res
 
     def get(self, oid, **kwargs):
@@ -112,8 +112,8 @@ class CmpBusinessCpaasInstanceService(CmpBusinessAbstractService):
         if len(res) > 0:
             res = res[0]
         else:
-            raise CmpApiManagerError("virtual machine %s does not exist" % oid)
-        self.logger.debug("get virtual machine %s: %s" % (oid, truncate(res)))
+            raise CmpApiManagerError(f"virtual machine {oid} does not exist")
+        self.logger.debug("get virtual machine %s: %s", oid, res)
         return res
 
     def __config_block(self, data):
@@ -163,7 +163,7 @@ class CmpBusinessCpaasInstanceService(CmpBusinessAbstractService):
 
         hypervisor = kwargs.get("Nvl_Hypervisor", "openstack")
         if hypervisor not in self.AVAILABLE_HYPERVISORS:
-            raise CmpApiManagerError("supported hypervisor are %s" % self.AVAILABLE_HYPERVISORS)
+            raise CmpApiManagerError(f"supported hypervisor are {self.AVAILABLE_HYPERVISORS}")
         data["Nvl_Hypervisor"] = hypervisor
 
         data["Nvl_MultiAvz"] = kwargs.get("Nvl_MultiAvz", True)
@@ -192,7 +192,7 @@ class CmpBusinessCpaasInstanceService(CmpBusinessAbstractService):
         uri = self.get_uri("computeservices/instance/runinstances")
         res = self.api_post(uri, data={"instance": data})
         res = dict_get(res, "RunInstanceResponse.instancesSet.0.instanceId")
-        self.logger.debug("Create virtual machine %s" % res)
+        self.logger.debug("Create virtual machine %s", res)
         return res
 
     def __set_data(self, input_data, input_field, search_data, search_field):
@@ -274,9 +274,9 @@ class CmpBusinessCpaasInstanceService(CmpBusinessAbstractService):
         :raises CmpApiClientError: raise :class:`CmpApiClientError`
         """
         data = self.format_request_data(kwargs, ["name", "desc", "ext_id", "active", "attribute", "tags"])
-        uri = self.get_uri("virtual machines/%s" % oid)
+        uri = self.get_uri(f"virtual machines/{oid}")
         res = self.api_put(uri, data={"resource": data})
-        self.logger.debug("Update virtual machine %s" % oid)
+        self.logger.debug("Update virtual machine %s", oid)
         return res
 
     def update(self, oid, **kwargs):
@@ -296,7 +296,7 @@ class CmpBusinessCpaasInstanceService(CmpBusinessAbstractService):
         data.update(self.format_request_data(kwargs, ["InstanceType"]))
         uri = self.get_uri("computeservices/instance/modifyinstanceattribute")
         res = self.api_put(uri, data={"instance": data})
-        self.logger.debug("Update virtual machine %s" % oid)
+        self.logger.debug("Update virtual machine %s", oid)
         return res
 
     def delete(self, oid, delete_services=True, delete_tags=True):
@@ -311,7 +311,7 @@ class CmpBusinessCpaasInstanceService(CmpBusinessAbstractService):
         data = self.format_request_data({"InstanceId.N": [oid]}, ["InstanceId.N"])
         uri = self.get_uri("computeservices/instance/terminateinstances")
         self.api_delete(uri, data=data)
-        self.logger.debug("delete virtual machine %s" % oid)
+        self.logger.debug("delete virtual machine %s", oid)
 
     def start(self, oid, schedule=None):
         r"""Start virtual machine
@@ -322,12 +322,12 @@ class CmpBusinessCpaasInstanceService(CmpBusinessAbstractService):
         :return:
         :raises CmpApiClientError: raise :class:`CmpApiClientError`
         """
-        kwargs = {"InstanceId.N": [oid], "Schedule": schedule}
-        params = ["InstanceId.N", "Schedule"]
-        data = self.format_paginated_query(kwargs, params)
+        data = {"InstanceId.N": [oid]}
+        if schedule is not None:
+            data["Schedule"] = schedule
         uri = self.get_uri("computeservices/instance/startinstances")
-        self.api_delete(uri, data=data)
-        self.logger.debug("start virtual machine %s" % oid)
+        self.api_put(uri, data=data)
+        self.logger.debug("start virtual machine %s", oid)
 
     def stop(self, oid, schedule=None):
         r"""Stop virtual machine
@@ -338,12 +338,12 @@ class CmpBusinessCpaasInstanceService(CmpBusinessAbstractService):
         :return:
         :raises CmpApiClientError: raise :class:`CmpApiClientError`
         """
-        kwargs = {"InstanceId.N": [oid], "Schedule": schedule}
-        params = ["InstanceId.N", "Schedule"]
-        data = self.format_paginated_query(kwargs, params)
-        uri = self.get_uri("computeservices/instance/stoptinstances")
-        self.api_delete(uri, data=data)
-        self.logger.debug("stop virtual machine %s" % oid)
+        data = {"InstanceId.N": [oid]}
+        if schedule is not None:
+            data["Schedule"] = schedule
+        uri = self.get_uri("computeservices/instance/stopinstances")
+        self.api_put(uri, data=data)
+        self.logger.debug("stop virtual machine %s", oid)
 
     def reboot(self, oid, schedule=None):
         r"""Reboot virtual machine
@@ -354,12 +354,12 @@ class CmpBusinessCpaasInstanceService(CmpBusinessAbstractService):
         :return:
         :raises CmpApiClientError: raise :class:`CmpApiClientError`
         """
-        kwargs = {"InstanceId.N": [oid], "Schedule": schedule}
-        params = ["InstanceId.N", "Schedule"]
-        data = self.format_paginated_query(kwargs, params)
+        data = {"InstanceId.N": [oid]}
+        if schedule is not None:
+            data["Schedule"] = schedule
         uri = self.get_uri("computeservices/instance/rebootinstances")
-        self.api_delete(uri, data=data)
-        self.logger.debug("reboot virtual machine %s" % oid)
+        self.api_put(uri, data=data)
+        self.logger.debug("reboot virtual machine %s", oid)
 
     def enable_monitoring(self, oid, templates=None):
         """enable virtual machine monitoring
@@ -369,12 +369,12 @@ class CmpBusinessCpaasInstanceService(CmpBusinessAbstractService):
         :return:
         :raises CmpApiClientError: raise :class:`CmpApiClientError`
         """
-        kwargs = {"InstanceId.N": [oid], "Nvl_Templates": templates}
-        params = ["InstanceId.N", "Nvl_Templates"]
-        data = self.format_paginated_query(kwargs, params)
+        data = {"InstanceId.N": [oid]}
+        if templates is not None:
+            data["Nvl_Templates"] = templates
         uri = self.get_uri("computeservices/instance/monitorinstances")
-        self.api_delete(uri, data=data)
-        self.logger.debug("enable virtual machine %s monitoring" % oid)
+        self.api_put(uri, data=data)
+        self.logger.debug("enable virtual machine %s monitoring", oid)
 
     def enable_logging(self, oid, files=None, pipeline=None):
         """enable virtual machine logging
@@ -385,12 +385,14 @@ class CmpBusinessCpaasInstanceService(CmpBusinessAbstractService):
         :return:
         :raises CmpApiClientError: raise :class:`CmpApiClientError`
         """
-        kwargs = {"InstanceId.N": [oid], "Files": files, "Pipeline": pipeline}
-        params = ["InstanceId.N", "Files", "Pipeline"]
-        data = self.format_paginated_query(kwargs, params)
+        data = {"InstanceId.N": [oid]}
+        if files is not None:
+            data["Files"] = files
+        if pipeline is not None:
+            data["Pipeline"] = pipeline
         uri = self.get_uri("computeservices/instance/forwardloginstances")
-        self.api_delete(uri, data=data)
-        self.logger.debug("enable virtual machine %s logging" % oid)
+        self.api_put(uri, data=data)
+        self.logger.debug("enable virtual machine %s logging", oid)
 
     def get_console(self, oid, *args, **kwargs):
         """get virtual machine console
@@ -406,7 +408,7 @@ class CmpBusinessCpaasInstanceService(CmpBusinessAbstractService):
         uri = self.get_uri("computeservices/instance/getconsole", preferred_version="v2.0", **kwargs)
         res = self.api_get(uri, data=data)
         res = dict_get(res, "GetConsoleResponse.console", default={})
-        self.logger.debug("get virtual machine %s console: %s" % (oid, truncate(res)))
+        self.logger.debug("get virtual machine %s console: %s", oid, res)
         return res
 
     def get_types(self, *args, **kwargs):
@@ -436,7 +438,7 @@ class CmpBusinessCpaasInstanceService(CmpBusinessAbstractService):
             "sort": {"field": "id", "order": "asc"},
             "types": res.get("instanceTypesSet"),
         }
-        self.logger.debug("get virtual machine types: %s" % truncate(res))
+        self.logger.debug("get virtual machine types: %s", res)
         return res
 
     #
@@ -452,11 +454,11 @@ class CmpBusinessCpaasInstanceService(CmpBusinessAbstractService):
         params = ["InstanceId.N"]
         mappings = {}
         data = self.format_paginated_query({"InstanceId.N": [oid]}, params, mappings=mappings)
-        uri = self.get_uri("computeservices/instance/describeinstancesnapshots" % oid)
+        uri = self.get_uri("computeservices/instance/describeinstancesnapshots")
         res = self.api_get(uri, data=data)
         res = dict_get(res, "DescribeInstanceSnapshotsResponse.instancesSet", default={})
         vm_name = truncate(res)
-        self.logger.debug("get snapshot %s of virtual machine %s" % (oid, vm_name))
+        self.logger.debug("get snapshot %s of virtual machine %s", oid, vm_name)
         return res
 
     def add_snapshot(self, oid, snapshot, *args, **kwargs):
@@ -467,14 +469,11 @@ class CmpBusinessCpaasInstanceService(CmpBusinessAbstractService):
         :return:
         :raise CmpApiClientError:
         """
-        nargs = {"InstanceId.N": [oid], "SnapshotName": snapshot}
-        params = ["InstanceId.N", "SnapshotName"]
-        mappings = {}
-        data = self.format_paginated_query(nargs, params, mappings=mappings)
-        uri = self.get_uri("computeservices/instance/createinstancesnapshots" % oid)
+        data = {"InstanceId.N": [oid], "SnapshotName": snapshot}
+        uri = self.get_uri("computeservices/instance/createinstancesnapshots")
         res = self.api_put(uri, data=data)
         vm_name = truncate(res)
-        self.logger.debug("add snapshot %s of virtual machine %s" % (oid, vm_name))
+        self.logger.debug("add snapshot %s of virtual machine %s %s", snapshot, oid, vm_name)
         return res
 
     def del_snapshot(self, oid, snapshot, *args, **kwargs):
@@ -485,14 +484,11 @@ class CmpBusinessCpaasInstanceService(CmpBusinessAbstractService):
         :return:
         :raise CmpApiClientError:
         """
-        nargs = {"InstanceId.N": [oid], "SnapshotId": snapshot}
-        params = ["InstanceId.N", "SnapshotId"]
-        mappings = {}
-        data = self.format_paginated_query(nargs, params, mappings=mappings)
-        uri = self.get_uri("computeservices/instance/deleteinstancesnapshots" % oid)
+        data = {"InstanceId.N": [oid], "SnapshotId": snapshot}
+        uri = self.get_uri("computeservices/instance/deleteinstancesnapshots")
         res = self.api_put(uri, data=data)
         vm_name = truncate(res)
-        self.logger.debug("delete snapshot %s of virtual machine %s" % (oid, vm_name))
+        self.logger.debug("deleted snapshot %s of VM %s (name: %s)", snapshot, oid, vm_name)
         return res
 
     def revert_snapshot(self, oid, snapshot, *args, **kwargs):
@@ -503,14 +499,11 @@ class CmpBusinessCpaasInstanceService(CmpBusinessAbstractService):
         :return:
         :raise CmpApiClientError:
         """
-        nargs = {"InstanceId.N": [oid], "SnapshotId": snapshot}
-        params = ["InstanceId.N", "SnapshotId"]
-        mappings = {}
-        data = self.format_paginated_query(nargs, params, mappings=mappings)
-        uri = self.get_uri("computeservices/instance/revertinstancesnapshots" % oid)
+        data = {"InstanceId.N": [oid], "SnapshotId": snapshot}
+        uri = self.get_uri("computeservices/instance/revertinstancesnapshots")
         res = self.api_put(uri, data=data)
         vm_name = truncate(res)
-        self.logger.debug("revert virtual machine %s to snapshot: %s" % (vm_name, oid))
+        self.logger.debug("revert virtual machine %s to snapshot: %s", vm_name, oid)
         return res
 
     #
@@ -522,9 +515,9 @@ class CmpBusinessCpaasInstanceService(CmpBusinessAbstractService):
         params.update(user_params)
         data = {"InstanceId": oid, "Nvl_User": params}
         data = {"instance": data}
-        uri = self.get_uri("computeservices/instance/modifyinstanceattribute" % oid)
+        uri = self.get_uri("computeservices/instance/modifyinstanceattribute")
         res = self.api_put(uri, data=data).get("ModifyInstanceAttributeResponse")
-        self.logger.debug("manage virtual machine %s users: %s" % (oid, truncate(res)))
+        self.logger.debug("manage virtual machine %s users: %s", oid, res)
         return res
 
     def add_user(self, oid, name, pwd, key, *args, **kwargs):
@@ -538,7 +531,7 @@ class CmpBusinessCpaasInstanceService(CmpBusinessAbstractService):
         :raise CmpApiClientError:
         """
         res = self.__user_action(oid, "add", Nvl_Name=name, Nvl_Password=pwd, Nvl_SshKey=key)
-        self.logger.debug("add virtual machine %s user: %s" % oid)
+        self.logger.debug("add virtual machine %s user: %s", oid, name)
         return res
 
     def del_user(self, oid, name, *args, **kwargs):
@@ -550,7 +543,7 @@ class CmpBusinessCpaasInstanceService(CmpBusinessAbstractService):
         :raise CmpApiClientError:
         """
         res = self.__user_action(oid, "delete", Nvl_Name=name)
-        self.logger.debug("delete virtual machine %s user: %s" % oid)
+        self.logger.debug("delete user %s on virtual machine %s", name, oid)
         return res
 
     def set_user_password(self, oid, name, pwd, *args, **kwargs):
@@ -563,7 +556,7 @@ class CmpBusinessCpaasInstanceService(CmpBusinessAbstractService):
         :raise CmpApiClientError:
         """
         res = self.__user_action(oid, "set-password", Nvl_Name=name, Nvl_Password=pwd)
-        self.logger.debug("set virtual machine %s user password: %s" % oid)
+        self.logger.debug("set %s password on virtual machine %s", name, oid)
         return res
 
     #
@@ -587,7 +580,7 @@ class CmpBusinessCpaasInstanceService(CmpBusinessAbstractService):
         )
         res = self.api_get(uri, data=data)
         res = dict_get(res, "DescribeBackupRestorePointsResponse.instanceBackupSet.0", default=[])
-        self.logger.debug("get virtual machine %s snapshots: %s" % (oid, truncate(res)))
+        self.logger.debug("get virtual machine %s snapshots: %s", oid, res)
         return res
 
     def add_backup_restore_point(self, oid, full=True, *args, **kwargs):
@@ -602,7 +595,7 @@ class CmpBusinessCpaasInstanceService(CmpBusinessAbstractService):
         uri = self.get_uri("computeservices/instancebackup/createbackuprestorepoints")
         res = self.api_post(uri, data=data)
         uuid = dict_get(res, "CreateBackupRestorePoints.instanceBackupSet.0.instanceId")
-        self.logger.debug("add virtual machine %s backup restore point: %s" % (oid, uuid))
+        self.logger.debug("add virtual machine %s backup restore point: %s", oid, uuid)
         return res
 
     def del_backup_restore_point(self, oid, restore_point_id, *args, **kwargs):
@@ -614,9 +607,9 @@ class CmpBusinessCpaasInstanceService(CmpBusinessAbstractService):
         :raise CmpApiClientError:
         """
         data = {"InstanceId.N": [oid], "RestorePointId": restore_point_id}
-        uri = self.get_uri("computeservices/instancebackup/deletebackuprestorepoints" % oid)
+        uri = self.get_uri("computeservices/instancebackup/deletebackuprestorepoints",)
         res = self.api_delete(uri, data=data)
-        self.logger.debug("delete virtual machine %s backup restore point %s" % (oid, restore_point_id))
+        self.logger.debug("delete virtual machine %s backup restore point %s", oid, restore_point_id)
         return res
 
     def get_backup_restores(self, oid, restore_point, *args, **kwargs):
@@ -642,7 +635,7 @@ class CmpBusinessCpaasInstanceService(CmpBusinessAbstractService):
             "DescribeBackupRestoresResponse.instanceBackupRestoreSet.0.restores",
             default=[],
         )
-        self.logger.debug("get virtual machine %s backup restores: %s" % (oid, truncate(res)))
+        self.logger.debug("get virtual machine %s backup restores: %s", oid, res)
         return res
 
     def add_backup_restore(self, oid, restore_point_id, name, *args, **kwargs):
@@ -659,10 +652,11 @@ class CmpBusinessCpaasInstanceService(CmpBusinessAbstractService):
             "RestorePointId": restore_point_id,
             "InstanceName": name,
         }
+        data={"instance": data}
         uri = self.get_uri("computeservices/instancebackup/createbackuprestores")
-        res = self.api_post(uri, data={"instance": data})
+        res = self.api_post(uri, data=data)
         uuid = dict_get(res, "CreateBackupRestoreResponse.instancesSet.0.instanceId")
-        self.logger.debug("restore a virtual machine %s from backup: %s" % (oid, uuid))
+        self.logger.debug("restore a virtual machine %s from backup: %s", oid, uuid)
         return uuid
 
     #
@@ -686,7 +680,7 @@ class CmpBusinessCpaasInstanceService(CmpBusinessAbstractService):
         )
         res = self.api_get(uri, data=data)
         res = dict_get(res, "DescribeBackupJobsResponse.jobSet", default=[])
-        self.logger.debug("list account %s backup jobs: %s" % (account, truncate(res)))
+        self.logger.debug("list account %s backup jobs: %s", account, res)
         return res
 
     def get_backup_job(self, account, job_id, *args, **kwargs):
@@ -708,7 +702,7 @@ class CmpBusinessCpaasInstanceService(CmpBusinessAbstractService):
         )
         res = self.api_get(uri, data=data)
         res = dict_get(res, "DescribeBackupJobsResponse.jobSet.0", default={})
-        self.logger.debug("get account %s backup job: %s" % (account, truncate(res)))
+        self.logger.debug("get account %s backup job: %s", account, res)
         return res
 
     def get_backup_job_policies(self, account, *args, **kwargs):
@@ -729,7 +723,7 @@ class CmpBusinessCpaasInstanceService(CmpBusinessAbstractService):
         )
         res = self.api_get(uri, data=data)
         res = dict_get(res, "DescribeBackupJobPoliciesResponse.jobPoliciesSet", default={})
-        self.logger.debug("get account %s backup job policies: %s" % (account, truncate(res)))
+        self.logger.debug("get account %s backup job policies: %s", account, res)
         return res
 
     def add_backup_job(
@@ -769,7 +763,7 @@ class CmpBusinessCpaasInstanceService(CmpBusinessAbstractService):
         )
         res = self.api_post(uri, data=data)
         uuid = dict_get(res, "CreateBackupJob.jobsSet.0.jobId")
-        self.logger.debug("add account %s backup job: %s" % (account, uuid))
+        self.logger.debug("add account %s backup job: %s", account, uuid)
         return res
 
     def update_backup_job(self, account, job_id, *args, **kwargs):
@@ -792,7 +786,7 @@ class CmpBusinessCpaasInstanceService(CmpBusinessAbstractService):
             **kwargs,
         )
         res = self.api_put(uri, data=data)
-        self.logger.debug("update account %s backup job %s" % (account, job_id))
+        self.logger.debug("update account %s backup job %s", account, job_id)
         return res
 
     def del_backup_job(self, account, job_id, *args, **kwargs):
@@ -809,8 +803,8 @@ class CmpBusinessCpaasInstanceService(CmpBusinessAbstractService):
             preferred_version="v1.0",
             **kwargs,
         )
-        res = self.api_delete(uri, data=data)
-        self.logger.debug("delete account %s backup job %s" % (account, job_id))
+        self.api_delete(uri, data=data)
+        self.logger.debug("delete account %s backup job %s", account, job_id)
         return job_id
 
     def add_instance_to_backup_job(self, account, job_id, instance_id, *args, **kwargs):
@@ -832,8 +826,8 @@ class CmpBusinessCpaasInstanceService(CmpBusinessAbstractService):
             preferred_version="v1.0",
             **kwargs,
         )
-        res = self.api_post(uri, data=data)
-        self.logger.debug("add instance %s to account %s backup job %s" % (instance_id, account, job_id))
+        self.api_post(uri, data=data)
+        self.logger.debug("add instance %s to account %s backup job %s", instance_id, account, job_id)
         return job_id
 
     def del_instance_from_backup_job(self, account, job_id, instance_id, *args, **kwargs):
@@ -855,6 +849,6 @@ class CmpBusinessCpaasInstanceService(CmpBusinessAbstractService):
             preferred_version="v1.0",
             **kwargs,
         )
-        res = self.api_post(uri, data=data)
-        self.logger.debug("delete instance %s from account %s backup job %s" % (instance_id, account, job_id))
+        self.api_post(uri, data=data)
+        self.logger.debug("delete instance %s from account %s backup job %s", instance_id, account, job_id)
         return job_id

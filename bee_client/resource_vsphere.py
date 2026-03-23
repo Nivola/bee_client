@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: EUPL-1.2
 #
-# (C) Copyright 2018-2024 CSI-Piemonte
+# (C) Copyright 2018-2026 CSI-Piemonte
 
 from .client import CmpBaseService
 from .resource import CmpResourceAbstractService
@@ -32,7 +32,7 @@ class CmpResourceVsphereDvpgService(CmpResourceVsphereAbstractService):
         :param oid: dvpg id, uuid or name
         :return: dvpg details dictionary
         """
-        uri = self.get_uri("vsphere/network/dvpgs/%s" % oid, preferred_version=self.VERSION, **kwargs)
+        uri = self.get_uri(f"vsphere/network/dvpgs/{oid}", preferred_version=self.VERSION, **kwargs)
         res = self.api_get(uri).get("dvpg", {})
         return res
 
@@ -51,7 +51,7 @@ class CmpResourceVsphereNsxEdgeService(CmpResourceVsphereAbstractService):
         :param oid: plugin vsphere nsx edge id, uuid or name
         :return: nsx edge details dictionary
         """
-        uri = self.get_uri("vsphere/network/nsx_edges/%s" % oid, preferred_version=self.VERSION, **kwargs)
+        uri = self.get_uri(f"vsphere/network/nsx_edges/{oid}", preferred_version=self.VERSION, **kwargs)
         res = self.api_get(uri).get("nsx_edge", {})
         return res
 

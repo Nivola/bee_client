@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: EUPL-1.2
 #
-# (C) Copyright 2018-2024 CSI-Piemonte
+# (C) Copyright 2018-2026 CSI-Piemonte
 from .client import CmpApiClient, CmpApiClientError, CmpApiManagerError, CmpApiManager, CmpBaseService
 from .business_account import CmpBusinessAccountAuthService, CmpBusinessAuthService
 from .business_capability import CmpBusinessCapabilityService

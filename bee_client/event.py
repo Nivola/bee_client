@@ -1,9 +1,8 @@
 # SPDX-License-Identifier: EUPL-1.2
 #
-# (C) Copyright 2018-2024 CSI-Piemonte
+# (C) Copyright 2018-2026 CSI-Piemonte
 
-from beecell.types.type_string import truncate
-from .client import CmpBaseService
+from .client import CmpBaseService, CmpApiManager
 
 
 class CmpEventAbstractService(CmpBaseService):
@@ -14,13 +13,13 @@ class CmpEventAbstractService(CmpBaseService):
     VERSION = "v1.0"
 
     def get_uri(self, uri):
-        return "/%s/%s/%s" % (self.VERSION, self.PREFIX, uri)
+        return f"/{self.VERSION}/{self.PREFIX}/{uri}"
 
 
 class CmpEventService(CmpEventAbstractService):
     """Cmp resource event"""
 
-    def __init__(self, manager):
+    def __init__(self, manager:CmpApiManager):
         CmpBaseService.__init__(self, manager)
 
     def list(self, *args, **kwargs):
@@ -40,7 +39,7 @@ class CmpEventService(CmpEventAbstractService):
         data = self.format_paginated_query(kwargs, params, mappings=mappings)
         uri = self.get_uri("events")
         res = self.api_get(uri, data=data)
-        self.logger.debug("get events: %s" % truncate(res))
+        self.logger.debug("get events: %s", res)
         return res
 
     def get(self, oid):
@@ -50,9 +49,9 @@ class CmpEventService(CmpEventAbstractService):
         :return: event
         :raise CmpApiClientError:
         """
-        uri = self.get_uri("events/%s" % oid)
+        uri = self.get_uri(f"events/{oid}")
         res = self.api_get(uri)
-        self.logger.debug("get event %s: %s" % (oid, truncate(res)))
+        self.logger.debug("get event %s: %s", oid, res)
         return res
 
     def list_api(self, *args, **kwargs):
@@ -71,7 +70,7 @@ class CmpEventService(CmpEventAbstractService):
         data = self.format_paginated_query(kwargs, params, mappings=mappings)
         uri = self.get_uri("apis")
         res = self.api_get(uri, data=data)
-        self.logger.debug("get api events: %s" % truncate(res))
+        self.logger.debug("get api events: %s", res)
         return res
 
     def get_api_log(self, oid, **kwargs):
@@ -86,7 +85,7 @@ class CmpEventService(CmpEventAbstractService):
         params = ["size", "page"]
         mappings = {}
         data = self.format_paginated_query(kwargs, params, mappings=mappings)
-        uri = self.get_uri("apis/%s/log" % oid)
+        uri = self.get_uri(f"apis/{oid}/log")
         res = self.api_get(uri, data=data).get("api_log", {})
-        self.logger.debug("get api event %s log: %s" % (oid, truncate(res)))
+        self.logger.debug("get api event %s log: %s", oid, res)
         return res

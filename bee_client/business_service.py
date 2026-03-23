@@ -1,17 +1,16 @@
 # SPDX-License-Identifier: EUPL-1.2
 #
-# (C) Copyright 2018-2024 CSI-Piemonte
+# (C) Copyright 2018-2026 CSI-Piemonte
 
-from beecell.simple import truncate
 from beecell.types.type_dict import dict_get
 from .business import CmpBusinessAbstractService
-from .client import CmpBaseService
+from .client import CmpBaseService, CmpApiManager
 
 
 class CmpBusinessServiceService(CmpBusinessAbstractService):
     """Cmp business service service"""
 
-    def __init__(self, manager):
+    def __init__(self, manager:CmpApiManager):
         CmpBaseService.__init__(self, manager)
 
         self.definition = CmpBusinessServiceDefinitionService(self.manager)
@@ -76,7 +75,7 @@ class CmpBusinessServiceDefinitionService(CmpBusinessAbstractService):
         data = self.format_paginated_query(kwargs, params, mappings=mappings, aliases=aliases)
         uri = self.get_uri("servicedefs")
         res = self.api_get(uri, data=data)
-        self.logger.debug("get service definitions: %s" % truncate(res))
+        self.logger.debug("get service definitions: %s", res)
         return res
 
     def get(self, oid):
@@ -86,9 +85,9 @@ class CmpBusinessServiceDefinitionService(CmpBusinessAbstractService):
         :return: servicedef
         :raise CmpApiClientError:
         """
-        uri = self.get_uri("servicedefs/%s" % oid)
+        uri = self.get_uri(f"servicedefs/{oid}")
         res = self.api_get(uri)
-        self.logger.debug("get servicedef %s: %s" % (oid, truncate(res)))
+        self.logger.debug("get servicedef %s: %s", oid, res)
         return res
 
     def add(self, name, division, **kwargs):
@@ -128,7 +127,7 @@ class CmpBusinessServiceDefinitionService(CmpBusinessAbstractService):
         )
         uri = self.get_uri("servicedefs")
         res = self.api_post(uri, data={"resource": data})
-        self.logger.debug("Create servicedef %s" % name)
+        self.logger.debug("Create servicedef %s", name)
         return res
 
     def update(self, oid, **kwargs):
@@ -142,9 +141,9 @@ class CmpBusinessServiceDefinitionService(CmpBusinessAbstractService):
         :raises CmpApiClientError: raise :class:`CmpApiClientError`
         """
         data = self.format_request_data(kwargs, ["name", "parent", "resource_uuid"])
-        uri = self.get_uri("servicedefs/%s" % oid)
+        uri = self.get_uri(f"servicedefs/{oid}")
         res = self.api_put(uri, data={"servicedef": data})
-        self.logger.debug("Update service definition %s" % oid)
+        self.logger.debug("Update service definition %s", oid)
         return res
 
     def delete(self, oid):
@@ -154,10 +153,10 @@ class CmpBusinessServiceDefinitionService(CmpBusinessAbstractService):
         :return:
         :raises CmpApiClientError: raise :class:`CmpApiClientError`
         """
-        uri = self.get_uri("servicedefs/%s" % oid, version="v2.0")
+        uri = self.get_uri(f"servicedefs/{oid}", version="v2.0")
         data = ""
         self.api_delete(uri, data=data)
-        self.logger.debug("delete service definition %s" % oid)
+        self.logger.debug("delete service definition %s", oid)
 
     def set_config(self, oid, key, value=None):
         """Update service definition config
@@ -168,9 +167,9 @@ class CmpBusinessServiceDefinitionService(CmpBusinessAbstractService):
         :return:
         :raises CmpApiClientError: raise :class:`CmpApiClientError`
         """
-        uri = self.get_uri("servicedefs/%s/config" % oid)
+        uri = self.get_uri(f"servicedefs/{oid}/config")
         self.api_put(uri, data={"config": {"key": key, "value": value}})
-        self.logger.debug("update service entity %s config" % oid)
+        self.logger.debug("update service entity %s config", oid)
 
 
 class CmpBusinessServiceInstanceService(CmpBusinessAbstractService):
@@ -232,7 +231,7 @@ class CmpBusinessServiceInstanceService(CmpBusinessAbstractService):
         data = self.format_paginated_query(kwargs, params, mappings=mappings, aliases=aliases)
         uri = self.get_uri("serviceinsts")
         res = self.api_get(uri, data=data)
-        self.logger.debug("get service instances: %s" % truncate(res))
+        self.logger.debug("get service instances: %s", res)
         return res
 
     def get(self, oid):
@@ -242,9 +241,9 @@ class CmpBusinessServiceInstanceService(CmpBusinessAbstractService):
         :return: serviceinst
         :raise CmpApiClientError:
         """
-        uri = self.get_uri("serviceinsts/%s" % oid)
+        uri = self.get_uri(f"serviceinsts/{oid}")
         res = self.api_get(uri)
-        self.logger.debug("get serviceinst %s: %s" % (oid, truncate(res)))
+        self.logger.debug("get serviceinst %s: %s", oid, res)
         return res
 
     def tree(self, oid, *args, **kwargs):
@@ -260,7 +259,7 @@ class CmpBusinessServiceInstanceService(CmpBusinessAbstractService):
         serviceinst["type"] = dict_get(serviceinst, "__meta__.definition")
         serviceinst["state"] = serviceinst["status"]
         serviceinst["children"] = [tree]
-        self.logger.debug("get serviceinst %s tree: %s" % (oid, truncate(serviceinst)))
+        self.logger.debug("get serviceinst %s tree: %s", oid, serviceinst)
         return serviceinst
 
     def add(self, name, division, **kwargs):
@@ -300,7 +299,7 @@ class CmpBusinessServiceInstanceService(CmpBusinessAbstractService):
         )
         uri = self.get_uri("serviceinsts")
         res = self.api_post(uri, data={"resource": data})
-        self.logger.debug("Create serviceinst %s" % name)
+        self.logger.debug("Create serviceinst %s", name)
         return res
 
     def load(self, name, account, plugintype, container_plugintype, resource, *args, **kwargs):
@@ -327,7 +326,7 @@ class CmpBusinessServiceInstanceService(CmpBusinessAbstractService):
         data.update(self.format_request_data(kwargs, ["desc", "service_definition_id", "parent"]))
         uri = self.get_uri("serviceinsts/import")
         res = self.api_post(uri, data={"serviceinst": data}).get("uuid", None)
-        self.logger.debug("import service instance: %s" % res)
+        self.logger.debug("import service instance: %s", res)
         return res
 
     def update(self, oid, **kwargs):
@@ -341,9 +340,9 @@ class CmpBusinessServiceInstanceService(CmpBusinessAbstractService):
         :raises CmpApiClientError: raise :class:`CmpApiClientError`
         """
         data = self.format_request_data(kwargs, ["name", "parent", "resource_uuid"])
-        uri = self.get_uri("serviceinsts/%s" % oid)
+        uri = self.get_uri(f"serviceinsts/{oid}")
         res = self.api_put(uri, data={"serviceinst": data})
-        self.logger.debug("Update service instance %s" % oid)
+        self.logger.debug("Update service instance %s", oid)
         return res
 
     def check(self, oid):
@@ -353,9 +352,9 @@ class CmpBusinessServiceInstanceService(CmpBusinessAbstractService):
         :return:
         :raises CmpApiClientError: raise :class:`CmpApiClientError`
         """
-        uri = self.get_uri("serviceinsts/%s/check" % oid)
+        uri = self.get_uri(f"serviceinsts/{oid}/check")
         self.api_get(uri, data={"serviceinst": {}})
-        self.logger.debug("patch service instance %s" % oid)
+        self.logger.debug("patch service instance %s", oid)
 
     def patch(self, oid):
         """Patch service instance
@@ -364,9 +363,9 @@ class CmpBusinessServiceInstanceService(CmpBusinessAbstractService):
         :return:
         :raises CmpApiClientError: raise :class:`CmpApiClientError`
         """
-        uri = self.get_uri("serviceinsts/%s" % oid)
+        uri = self.get_uri(f"serviceinsts/{oid}")
         self.api_patch(uri, data={"serviceinst": {}})
-        self.logger.debug("patch service instance %s" % oid)
+        self.logger.debug("patch service instance %s", oid)
 
     def delete(self, oid, propagate=False, force=False):
         """Delete service instance
@@ -377,10 +376,10 @@ class CmpBusinessServiceInstanceService(CmpBusinessAbstractService):
         :return:
         :raises CmpApiClientError: raise :class:`CmpApiClientError`
         """
-        uri = self.get_uri("serviceinsts/%s" % oid, version="v2.0")
+        uri = self.get_uri(f"serviceinsts/{oid}", version="v2.0")
         data = {"propagate": propagate, "force": force}
         self.api_delete(uri, data=data)
-        self.logger.debug("delete service instance %s" % oid)
+        self.logger.debug("delete service instance %s", oid)
 
     def set_status(self, oid, status):
         """Set service instance status
@@ -390,9 +389,9 @@ class CmpBusinessServiceInstanceService(CmpBusinessAbstractService):
         :return:
         :raises CmpApiClientError: raise :class:`CmpApiClientError`
         """
-        uri = self.get_uri("serviceinsts/%s/status" % oid)
+        uri = self.get_uri(f"serviceinsts/{oid}/status")
         self.api_put(uri, data={"serviceinst": {"status": status.upper()}})
-        self.logger.debug("set service instance %s status" % oid)
+        self.logger.debug("set service instance %s status", oid)
 
     def add_tag(self, oid, tags):
         """Add tags to service instance
@@ -402,9 +401,9 @@ class CmpBusinessServiceInstanceService(CmpBusinessAbstractService):
         :return:
         :raises CmpApiClientError: raise :class:`CmpApiClientError`
         """
-        uri = self.get_uri("serviceinsts/%s" % oid)
+        uri = self.get_uri(f"serviceinsts/{oid}")
         self.api_put(uri, data={"serviceinst": {"tags": {"cmd": "add", "values": tags}}})
-        self.logger.debug("add tags %s to service instance %s" % (tags, oid))
+        self.logger.debug("add tags %s to service instance %s", tags, oid)
 
     def del_tag(self, oid, tags):
         """Delete tags from service instance
@@ -414,9 +413,9 @@ class CmpBusinessServiceInstanceService(CmpBusinessAbstractService):
         :return:
         :raises CmpApiClientError: raise :class:`CmpApiClientError`
         """
-        uri = self.get_uri("serviceinsts/%s" % oid)
+        uri = self.get_uri(f"serviceinsts/{oid}")
         self.api_put(uri, data={"serviceinst": {"tags": {"cmd": "delete", "values": tags}}})
-        self.logger.debug("delet tags %s from service instance %s" % (tags, oid))
+        self.logger.debug("delet tags %s from service instance %s", tags, oid)
 
     def set_config(self, oid, key, value=None):
         """Update service instance config
@@ -427,9 +426,9 @@ class CmpBusinessServiceInstanceService(CmpBusinessAbstractService):
         :return:
         :raises CmpApiClientError: raise :class:`CmpApiClientError`
         """
-        uri = self.get_uri("serviceinsts/%s/config" % oid)
+        uri = self.get_uri(f"serviceinsts/{oid}/config")
         self.api_put(uri, data={"config": {"key": key, "value": value}})
-        self.logger.debug("update service entity %s config" % oid)
+        self.logger.debug("update service entity %s config", oid)
 
 
 class CmpBusinessServiceLinkService(CmpBusinessAbstractService):
@@ -457,7 +456,7 @@ class CmpBusinessServiceLinkService(CmpBusinessAbstractService):
         data = self.format_paginated_query(kwargs, params, mappings=mappings, aliases=aliases)
         uri = self.get_uri("links")
         res = self.api_get(uri, data=data).get("links")
-        self.logger.debug("get service links: %s" % truncate(res))
+        self.logger.debug("get service links: %s", res)
         return res
 
     def get(self, oid):
@@ -467,12 +466,12 @@ class CmpBusinessServiceLinkService(CmpBusinessAbstractService):
         :return: service link
         :raise CmpApiClientError:
         """
-        uri = self.get_uri("links/%s" % oid)
+        uri = self.get_uri(f"links/{oid}")
         res = self.api_get(uri).get("link")
-        self.logger.debug("get service link %s: %s" % (oid, truncate(res)))
+        self.logger.debug("get service link %s: %s", oid, res)
         return res
 
-    def add(self, name, account, type, start_service, end_service, **kwargs):
+    def add(self, name, account, link_type, start_service, end_service, **kwargs):
         """Add service link
 
         :param name: service link name
@@ -482,14 +481,14 @@ class CmpBusinessServiceLinkService(CmpBusinessAbstractService):
         data = {
             "name": name,
             "account": account,
-            "type": type,
+            "type": link_type,
             "start_service": start_service,
             "end_service": end_service,
         }
         data.update(self.format_request_data(kwargs, ["attributes"]))
         uri = self.get_uri("links")
         res = self.api_post(uri, data={"link": data}).get("uuid")
-        self.logger.debug("Create service link %s" % name)
+        self.logger.debug("Create service link %s", name)
         return res
 
     def update(self, oid, **kwargs):
@@ -500,9 +499,9 @@ class CmpBusinessServiceLinkService(CmpBusinessAbstractService):
         :raises CmpApiClientError: raise :class:`CmpApiClientError`
         """
         data = self.format_request_data(kwargs, ["name", "type", "start_service", "end_service", "attributes", "tags"])
-        uri = self.get_uri("links/%s" % oid)
+        uri = self.get_uri(f"links/{oid}")
         res = self.api_put(uri, data={"link": data})
-        self.logger.debug("Update link %s" % oid)
+        self.logger.debug("Update link %s", oid)
         return res
 
     def delete(self, oid):
@@ -512,7 +511,7 @@ class CmpBusinessServiceLinkService(CmpBusinessAbstractService):
         :return:
         :raises CmpApiClientError: raise :class:`CmpApiClientError`
         """
-        uri = self.get_uri("links/%s" % oid)
+        uri = self.get_uri(f"links/{oid}")
         data = ""
         self.api_delete(uri, data=data)
-        self.logger.debug("delete link %s" % oid)
+        self.logger.debug("delete link %s", oid)

@@ -1,8 +1,7 @@
 # SPDX-License-Identifier: EUPL-1.2
 #
-# (C) Copyright 2018-2024 CSI-Piemonte
+# (C) Copyright 2018-2026 CSI-Piemonte
 
-from beecell.types.type_string import truncate
 from .client import CmpBaseService
 from .resource import CmpResourceAbstractService
 
@@ -51,13 +50,17 @@ class CmpResourceOntapVolumeService(CmpResourceOntapAbstractService):
             "ext_id",
             "state",
             "tags",
-            "attributes",
+            "attribute",
+            "filter_deletable_snaplocks"
         ]
-        mappings = {"name": lambda n: "%" + n + "%"}
+        mappings = {
+            "name": lambda n: "%" + n + "%",
+            "attribute": lambda n: "%" + n + "%"
+        }
         data = self.format_paginated_query(kwargs, params, mappings=mappings)
         uri = self.get_uri("ontap/volumes", preferred_version=self.VERSION, **kwargs)
         res = self.api_get(uri, data=data)
-        self.logger.debug("get volumes: %s" % truncate(res))
+        self.logger.debug("get volumes: %s", res)
         return res
 
     def get(self, oid, **kwargs):
@@ -67,9 +70,9 @@ class CmpResourceOntapVolumeService(CmpResourceOntapAbstractService):
         :return: instance
         :raise CmpApiClientError:
         """
-        uri = self.get_uri("ontap/volumes/%s" % oid, preferred_version=self.VERSION, **kwargs)
+        uri = self.get_uri(f"ontap/volumes/{oid}", preferred_version=self.VERSION, **kwargs)
         res = self.api_get(uri)
-        self.logger.debug("get volume %s: %s" % (oid, truncate(res)))
+        self.logger.debug("get volume %s: %s", oid, res)
         return res
 
     def add(self, container, name, ontap_volume_id, desc=None, **kwargs):
@@ -92,7 +95,7 @@ class CmpResourceOntapVolumeService(CmpResourceOntapAbstractService):
         }
         uri = self.get_uri("ontap/volumes", preferred_version=self.VERSION, **kwargs)
         res = self.api_post(uri, data={"volume": data})
-        self.logger.debug("Create volume %s" % name)
+        self.logger.debug("Create volume %s", name)
         return res
 
     def delete(self, oid, force=True, deep=True, **kwargs):
@@ -102,6 +105,6 @@ class CmpResourceOntapVolumeService(CmpResourceOntapAbstractService):
         :return:
         :raises CmpApiClientError: raise :class:`CmpApiClientError`
         """
-        uri = self.get_uri("ontap/volumes/%s" % oid, preferred_version=self.VERSION, **kwargs)
+        uri = self.get_uri(f"ontap/volumes/{oid}", preferred_version=self.VERSION, **kwargs)
         self.api_delete(uri, data="")
-        self.logger.debug("delete volume %s" % oid)
+        self.logger.debug("delete volume %s", oid)

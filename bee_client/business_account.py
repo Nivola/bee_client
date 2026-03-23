@@ -1,8 +1,7 @@
 # SPDX-License-Identifier: EUPL-1.2
 #
-# (C) Copyright 2018-2024 CSI-Piemonte
+# (C) Copyright 2018-2026 CSI-Piemonte
 
-from beecell.simple import truncate
 from beecell.types.type_dict import dict_get
 from .business import CmpBusinessAbstractService
 from .business_common import CmpBusinessAuthService
@@ -54,7 +53,7 @@ class CmpBusinessAccountService(CmpBusinessAbstractService):
         data = self.format_paginated_query(kwargs, params, mappings=mappings, aliases=aliases)
         uri = self.get_uri("accounts")
         res = self.api_get(uri, data=data)
-        self.logger.debug("get accounts: %s" % truncate(res))
+        self.logger.debug("get accounts: %s", res)
         return res
 
     def get(self, oid):
@@ -64,9 +63,9 @@ class CmpBusinessAccountService(CmpBusinessAbstractService):
         :return: account
         :raise CmpApiClientError:
         """
-        uri = self.get_uri("accounts/%s" % oid)
+        uri = self.get_uri(f"accounts/{oid}")
         res = self.api_get(uri).get("account", {})
-        self.logger.debug("get account %s: %s" % (oid, truncate(res)))
+        self.logger.debug("get account %s: %s", oid, res)
         return res
 
     def add(self, name, division, acronym="", **kwargs):
@@ -105,7 +104,7 @@ class CmpBusinessAccountService(CmpBusinessAbstractService):
         )
         uri = self.get_uri("accounts")
         res = self.api_post(uri, data={"account": data}).get("uuid")
-        self.logger.debug("Create account %s" % name)
+        self.logger.debug("Create account %s", name)
         return res
 
     def update(self, oid, **kwargs):
@@ -126,9 +125,9 @@ class CmpBusinessAccountService(CmpBusinessAbstractService):
         :raises CmpApiClientError: raise :class:`CmpApiClientError`
         """
         data = self.format_request_data(kwargs, ["name", "desc", "ext_id", "active", "attribute", "tags"])
-        uri = self.get_uri("accounts/%s" % oid)
+        uri = self.get_uri(f"accounts/{oid}")
         res = self.api_put(uri, data={"account": data})
-        self.logger.debug("Update account %s" % oid)
+        self.logger.debug("Update account %s", oid)
         return res
 
     def patch(self, oid):
@@ -138,9 +137,9 @@ class CmpBusinessAccountService(CmpBusinessAbstractService):
         :return:
         :raises CmpApiClientError: raise :class:`CmpApiClientError`
         """
-        uri = self.get_uri("accounts/%s" % oid)
+        uri = self.get_uri(f"accounts/{oid}")
         self.api_patch(uri, data={"account": {}})
-        self.logger.debug("patch account %s" % oid)
+        self.logger.debug("patch account %s", oid)
 
     def delete(self, oid, delete_services=True, delete_tags=True):
         """Delete account
@@ -151,10 +150,10 @@ class CmpBusinessAccountService(CmpBusinessAbstractService):
         :return:
         :raises CmpApiClientError: raise :class:`CmpApiClientError`
         """
-        uri = self.get_uri("accounts/%s" % oid)
+        uri = self.get_uri(f"accounts/{oid}")
         data = {"delete_services": delete_services, "delete_tags": delete_tags}
         self.api_delete(uri, data=data)
-        self.logger.debug("delete account %s" % oid)
+        self.logger.debug("delete account %s", oid)
 
     def get_tags(self, oid, *args, **kwargs):
         """get account tags
@@ -170,9 +169,9 @@ class CmpBusinessAccountService(CmpBusinessAbstractService):
         params = []
         mappings = {}
         data = self.format_paginated_query(kwargs, params, mappings=mappings)
-        uri = self.get_uri("accounts/%s/tags" % oid)
+        uri = self.get_uri(f"accounts/{oid}/tags")
         res = self.api_get(uri, data=data)
-        self.logger.debug("get account %s tags: %s" % (oid, truncate(res)))
+        self.logger.debug("get account %s tags: %s", oid, res)
         return res
 
     def get_definitions(self, oid, *args, **kwargs):
@@ -192,9 +191,9 @@ class CmpBusinessAccountService(CmpBusinessAbstractService):
         params = ["plugintype", "category", "container"]
         mappings = {}
         data = self.format_paginated_query(kwargs, params, mappings=mappings)
-        uri = self.get_uri("accounts/%s/definitions" % oid, version="v2.0")
+        uri = self.get_uri(f"accounts/{oid}/definitions", version="v2.0")
         res = self.api_get(uri, data=data)
-        self.logger.debug("get account %s definitions: %s" % (oid, truncate(res)))
+        self.logger.debug("get account %s definitions: %s", oid, res)
         return res
 
     def add_definitions(self, oid, definitions, *args, **kwargs):
@@ -206,9 +205,9 @@ class CmpBusinessAccountService(CmpBusinessAbstractService):
         :raise CmpApiClientError:
         """
         data = definitions
-        uri = self.get_uri("accounts/%s/definitions" % oid, version="v2.0")
+        uri = self.get_uri(f"accounts/{oid}/definitions", version="v2.0")
         res = self.api_post(uri, data={"definitions": data})
-        self.logger.debug("add account %s definitions %s: %s" % (oid, definitions, truncate(res)))
+        self.logger.debug("add account %s definitions %s: %s", oid, definitions, res)
         return res
 
     def get_active_services(self, oid):
@@ -219,23 +218,10 @@ class CmpBusinessAccountService(CmpBusinessAbstractService):
         :raise CmpApiClientError:
         """
         data = ""
-        uri = self.get_uri("accounts/%s/activeservices" % oid)
+        uri = self.get_uri(f"accounts/{oid}/activeservices")
         res = self.api_get(uri, data=data)
-        self.logger.debug("get account %s active services: %s" % (oid, truncate(res)))
+        self.logger.debug("get account %s active services: %s", oid, res)
         return res
-
-    # def get_consumes(self, oid):
-    #     """get account consumes
-    #
-    #     :param oid: account id or uuid
-    #     :return: active services
-    #     :raise CmpApiClientError:
-    #     """
-    #     data = ''
-    #     uri = self.get_uri('accounts/%s/costs' % oid)
-    #     res = self.api_get(uri, data=data)
-    #     self.logger.debug('get account %s consumes: %s' % (oid, truncate(res)))
-    #     return res
 
     def get_capabilities(self, oid, *args, **kwargs):
         """get account capabilities
@@ -247,9 +233,9 @@ class CmpBusinessAccountService(CmpBusinessAbstractService):
         params = []
         mappings = {}
         data = self.format_paginated_query(kwargs, params, mappings=mappings)
-        uri = self.get_uri("accounts/%s/capabilities" % oid)
+        uri = self.get_uri(f"accounts/{oid}/capabilities")
         res = self.api_get(uri, data=data)
-        self.logger.debug("get account %s capabilities: %s" % (oid, truncate(res)))
+        self.logger.debug("get account %s capabilities: %s", oid, res)
         return res
 
     def add_capability(self, oid, capability, *args, **kwargs):
@@ -260,9 +246,9 @@ class CmpBusinessAccountService(CmpBusinessAbstractService):
         :return: {'taskid': ...}
         :raise CmpApiClientError:
         """
-        uri = self.get_uri("accounts/%s/capabilities" % oid)
+        uri = self.get_uri(f"accounts/{oid}/capabilities")
         res = self.api_post(uri, data={"capabilities": [capability]})
-        self.logger.debug("add account %s capability %s: %s" % (oid, capability, truncate(res)))
+        self.logger.debug("add account %s capability %s: %s", oid, capability, res)
         return res
 
     def update_capability(self, oid, capability, *args, **kwargs):
@@ -273,9 +259,9 @@ class CmpBusinessAccountService(CmpBusinessAbstractService):
         :return: {'taskid': ...}
         :raise CmpApiClientError:
         """
-        uri = self.get_uri("accounts/%s/capabilities" % oid)
+        uri = self.get_uri(f"accounts/{oid}/capabilities")
         res = self.api_put(uri, data={"capabilities": [capability]})
-        self.logger.debug("update account %s capability %s: %s" % (oid, capability, truncate(res)))
+        self.logger.debug("update account %s capability %s: %s", oid, capability, res)
         return res
 
     def tree(self, oid, *args, **kwargs):
@@ -293,13 +279,13 @@ class CmpBusinessAccountService(CmpBusinessAbstractService):
         if len(res) > 0:
             compute_zone = dict_get(res, "0.resource_uuid")
         else:
-            raise CmpApiManagerError("account %s tree can not be evaluated" % oid)
+            raise CmpApiManagerError(f"account {oid} tree can not be evaluated")
 
         tree = self.manager.resource.entity.tree(compute_zone).get("resourcetree", {})
         account["type"] = dict_get(account, "__meta__.definition")
         account["state"] = account["status"]
         account["children"] = [tree]
-        self.logger.debug("get account %s tree: %s" % (oid, truncate(account)))
+        self.logger.debug("get account %s tree: %s", oid, account)
         return account
 
 

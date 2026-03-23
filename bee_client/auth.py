@@ -1,11 +1,9 @@
 # SPDX-License-Identifier: EUPL-1.2
 #
-# (C) Copyright 2018-2024 CSI-Piemonte
+# (C) Copyright 2018-2026 CSI-Piemonte
 
 from urllib.parse import quote, urlencode
-from beecell.types.type_string import truncate
-from .client import CmpBaseService, CmpApiClientError
-from .jwtclient import JWTClient
+from .client import CmpBaseService, CmpApiClientError, CmpApiManager
 
 
 class CmpAuthService(CmpBaseService):
@@ -15,11 +13,11 @@ class CmpAuthService(CmpBaseService):
     PREFIX = "nas"
     VERSION = "v1.0"
 
-    def __init__(self, manager):
-        CmpBaseService.__init__(self, manager)
+    def __init__(self, manager:CmpApiManager):
+        CmpBaseService.__init__(self, manager )
 
     def get_uri(self, uri):
-        return "/%s/%s/%s" % (self.VERSION, self.PREFIX, uri)
+        return f"/{self.VERSION}/{self.PREFIX}/{uri}"
 
     #
     # auth provider
@@ -33,7 +31,7 @@ class CmpAuthService(CmpBaseService):
         data = ""
         uri = self.get_uri("providers")
         res = self.api_get(uri, data=data)
-        self.logger.debug("get authentication providers: %s" % truncate(res))
+        self.logger.debug("get authentication providers: %s", res)
         return res
 
     #
@@ -54,7 +52,7 @@ class CmpAuthService(CmpBaseService):
         data = self.format_paginated_query(kwargs, params, aliases=aliases)
         uri = self.get_uri("tokens")
         res = self.api_get(uri, data=data)
-        self.logger.debug("get tokens: %s" % truncate(res))
+        self.logger.debug("get tokens: %s", res)
         return res
 
     def get_token(self, oid):
@@ -64,9 +62,9 @@ class CmpAuthService(CmpBaseService):
         :return: token
         :raise CmpApiClientError:
         """
-        uri = self.get_uri("tokens/%s" % oid)
+        uri = self.get_uri(f"tokens/{oid}")
         res = self.api_get(uri).get("token", {})
-        self.logger.debug("get token %s: %s" % (oid, truncate(res)))
+        self.logger.debug("get token %s: %s", oid, res)
         return res
 
     def create_token(self, api_user=None, api_user_pwd=None, api_user_secret=None, headers=None):
@@ -90,14 +88,14 @@ class CmpAuthService(CmpBaseService):
         :raises CmpApiClientError: raise :class:`CmpApiClientError`
         """
         try:
-            uri = self.get_uri("tokens/%s" % token)
+            uri = self.get_uri(f"tokens/{token}")
             self.manager.api_request("auth", uri, "GET", data="", headers=headers)
             res = True
         except CmpApiClientError as ex:
             if ex.code == 401:
                 res = False
 
-        self.logger.debug("Check token %s is valid: %s" % (token, res))
+        self.logger.debug("Check token %s is valid: %s", token, res)
         return res
 
     #
@@ -121,7 +119,7 @@ class CmpAuthService(CmpBaseService):
         data = self.format_paginated_query(kwargs, params, aliases=aliases)
         uri = self.get_uri("objects")
         res = self.api_get(uri, data=data)
-        self.logger.debug("get objects: %s" % truncate(res))
+        self.logger.debug("get objects: %s", res)
         return res
 
     def get_object(self, oid):
@@ -131,40 +129,41 @@ class CmpAuthService(CmpBaseService):
         :return: object
         :raise CmpApiClientError:
         """
-        uri = self.get_uri("objects/%s" % oid)
+        uri = self.get_uri(f"objects/{oid}")
         res = self.api_get(uri)
-        self.logger.debug("get object %s: %s" % (oid, truncate(res)))
+        self.logger.debug("get object %s: %s", oid, res)
         return res
 
-    def add_object(self, subsystem, type, objid, desc, **kvargs):
+    def add_object(self, subsystem, o_type, objid, desc, **kvargs):
         """Add authorization object with all related permissions
 
         :param subsystem: subsystem
-        :param type: object type
+        :param o_type: object type
         :param objid: authorization id
         :param desc: object description
         :raises CmpApiClientError: raise :class:`CmpApiClientError`
         """
-        data = {"subsystem": subsystem, "type": type, "objid": objid, "desc": desc}
+        data = {"subsystem": subsystem, "type": o_type, "objid": objid, "desc": desc}
 
         uri = self.get_uri("objects")
         res = self.api_post(uri, data={"objects": [data]})
-        self.logger.debug("Add object: %s:%s %s" % (subsystem, type, objid))
+        self.logger.debug("Add object: %s:%s %s", subsystem, o_type, objid)
         return res
 
-    def del_object(self, subsystem, type, objid, **kvargs):
+    def del_object(self, subsystem, o_type, objid, **kvargs):
         """Remove authorization object with all related permissions
 
         :param subsystem: subsystem
-        :param type: object type
+        :param o_type: object type
         :param objid: authorization id
         :return:
         :raises CmpApiClientError: raise :class:`CmpApiClientError`
         """
         objid = objid.replace("//", "__")
-        uri = self.get_uri("objects/%s" % quote("%s:%s:%s" % (subsystem, type, objid)))
+        raw_id = f"{subsystem}:{o_type}:{objid}"
+        uri = self.get_uri(f"objects/{quote(raw_id)}")
         res = self.api_delete(uri)
-        self.logger.debug("Remove object: %s:%s %s" % (subsystem, type, objid))
+        self.logger.debug("Remove object: %s:%s %s", subsystem, o_type, objid)
         return res
 
     #
@@ -187,7 +186,7 @@ class CmpAuthService(CmpBaseService):
         data = self.format_paginated_query(kwargs, params, aliases=aliases)
         uri = self.get_uri("objects/types")
         res = self.api_get(uri, data=data)
-        self.logger.debug("get object types: %s" % truncate(res))
+        self.logger.debug("get object types: %s", res)
         return res
 
     def add_object_type(self, objtype, objdef):
@@ -201,7 +200,7 @@ class CmpAuthService(CmpBaseService):
 
         uri = self.get_uri("objects/types")
         res = self.api_post(uri, data={"object_types": [data]})
-        self.logger.debug("Add object type: %s:%s" % (objtype, objdef))
+        self.logger.debug("Add object type: %s:%s", objtype, objdef)
         return res
 
     def del_object_type(self, type_id):
@@ -210,9 +209,9 @@ class CmpAuthService(CmpBaseService):
         :param type_id: obj type id
         :raises CmpApiClientError: raise :class:`CmpApiClientError`
         """
-        uri = self.get_uri("objects/types/%s" % type_id)
+        uri = self.get_uri(f"objects/types/{type_id}")
         res = self.api_delete(uri)
-        self.logger.debug("Delete object type: %s" % type_id)
+        self.logger.debug("Delete object type: %s", type_id)
         return res
 
     #
@@ -229,7 +228,7 @@ class CmpAuthService(CmpBaseService):
         data = self.format_paginated_query(kwargs, params, aliases=aliases)
         uri = self.get_uri("objects/actions")
         res = self.api_get(uri, data=data)
-        self.logger.debug("get object actions: %s" % truncate(res))
+        self.logger.debug("get object actions: %s", res)
         return res
 
     #
@@ -254,7 +253,7 @@ class CmpAuthService(CmpBaseService):
         data = self.format_paginated_query(kwargs, params, aliases=aliases)
         uri = self.get_uri("objects/perms")
         res = self.api_get(uri, data=data)
-        self.logger.debug("get object permissions: %s" % truncate(res))
+        self.logger.debug("get object permissions: %s", res)
         return res
 
     def get_object_perm(self, oid):
@@ -264,9 +263,9 @@ class CmpAuthService(CmpBaseService):
         :return: object permission
         :raise CmpApiClientError:
         """
-        uri = self.get_uri("objects/perms/%s" % oid)
+        uri = self.get_uri(f"objects/perms/{oid}")
         res = self.api_get(uri)
-        self.logger.debug("get object permission %s: %s" % (oid, truncate(res)))
+        self.logger.debug("get object permission %s: %s", oid, res)
         return res
 
     def get_permissions2(self, objtype, objdef, objid):
@@ -280,9 +279,9 @@ class CmpAuthService(CmpBaseService):
         """
         data = ""
         objid = objid.replace("//", "_")
-        uri = "/api/nas/object/perm/T:%s+D:%s+I:%s" % (objtype, objdef, objid)
+        uri = f"/api/nas/object/perm/T:{objtype}+D:{objdef}+I:{objid}"
         res = self.manager.api_request("auth", uri, "GET", data, silent=True)
-        self.logger.debug("Get permission : %s:%s %s" % (objtype, objdef, objid))
+        self.logger.debug("Get permission : %s:%s %s", objtype, objdef, objid)
         return res
 
     def get_permissions(self, objtype, objdef, objid, cascade=False, **kvargs):
@@ -305,7 +304,7 @@ class CmpAuthService(CmpBaseService):
         data.update(kvargs)
         uri = "/v1.0/nas/objects/perms"
         res = self.manager.api_request("auth", uri, "GET", urlencode(data), parse=True, silent=True)
-        self.logger.debug("Get permission : %s:%s %s, cascade: %s" % (objtype, objdef, objid, cascade))
+        self.logger.debug("Get permission : %s:%s %s, cascade: %s", objtype, objdef, objid, cascade)
         return res.get("perms"), res.get("total")
 
     #
@@ -331,7 +330,7 @@ class CmpAuthService(CmpBaseService):
         data = self.format_paginated_query(kwargs, params, aliases=aliases)
         uri = self.get_uri("roles")
         res = self.api_get(uri, data=data)
-        self.logger.debug("get roles: %s" % truncate(res))
+        self.logger.debug("get roles: %s", res)
         return res
 
     def get_role(self, oid):
@@ -341,9 +340,9 @@ class CmpAuthService(CmpBaseService):
         :return: role
         :raise CmpApiClientError:
         """
-        uri = self.get_uri("roles/%s" % oid)
+        uri = self.get_uri(f"roles/{oid}")
         res = self.api_get(uri)
-        self.logger.debug("get role %s: %s" % (oid, truncate(res)))
+        self.logger.debug("get role %s: %s", oid, res)
         return res
 
     def exist_role(self, name):
@@ -359,7 +358,7 @@ class CmpAuthService(CmpBaseService):
         res = None
         if len(roles) > 0:
             res = roles[0]
-        self.logger.debug("Check role %s exists: %s" % (name, res))
+        self.logger.debug("Check role %s exists: %s", name, res)
         return res
 
     def append_role_permissions(self, role, objtype, objdef, objid, objaction):
@@ -388,9 +387,9 @@ class CmpAuthService(CmpBaseService):
                 }
             }
         }
-        uri = "/v1.0/nas/roles/%s" % role
+        uri = f"/v1.0/nas/roles/{role}"
         res = self.manager.api_request("auth", uri, "PUT", data, parse=True, silent=True)
-        self.logger.debug("Append permission %s:%s %s %s to role %s" % (objtype, objdef, objid, objaction, role))
+        self.logger.debug("Append permission %s:%s %s %s to role %s", objtype, objdef, objid, objaction, role)
         return res
 
     def append_role_permission_list(self, role, perms):
@@ -402,9 +401,9 @@ class CmpAuthService(CmpBaseService):
         :raises CmpApiClientError: raise :class:`CmpApiClientError`
         """
         data = {"role": {"perms": {"append": perms, "remove": []}}}
-        uri = "/v1.0/nas/roles/%s" % role
+        uri = f"/v1.0/nas/roles/{role}"
         res = self.manager.api_request("auth", uri, "PUT", data, parse=True, silent=True)
-        self.logger.debug("Append permissions %s " % truncate(perms))
+        self.logger.debug("Append permissions %s ", perms)
         return res
 
     def add_role(self, name, desc):
@@ -418,7 +417,7 @@ class CmpAuthService(CmpBaseService):
         data = {"role": {"name": name, "desc": desc}}
         uri = "/v1.0/nas/roles"
         res = self.manager.api_request("auth", uri, "POST", data, parse=True, silent=True)
-        self.logger.debug("Add role: %s" % name)
+        self.logger.debug("Add role: %s", name)
         return res
 
     def remove_role(self, oid):
@@ -429,9 +428,9 @@ class CmpAuthService(CmpBaseService):
         :raises CmpApiClientError: raise :class:`CmpApiClientError`
         """
         data = ""
-        uri = "/v1.0/nas/roles/%s" % oid
+        uri = f"/v1.0/nas/roles/{oid}"
         res = self.manager.api_request("auth", uri, "DELETE", data, parse=True, silent=True)
-        self.logger.debug("Remove role: %s" % oid)
+        self.logger.debug("Remove role: %s", oid)
         return res
 
     #
@@ -459,7 +458,7 @@ class CmpAuthService(CmpBaseService):
         data = self.format_paginated_query(kwargs, params, aliases=aliases, mappings=mappings)
         uri = self.get_uri("users")
         res = self.api_get(uri, data=data)
-        self.logger.debug("get users: %s" % truncate(res))
+        self.logger.debug("get users: %s", res)
         return res
 
     def get_user(self, oid):
@@ -469,9 +468,9 @@ class CmpAuthService(CmpBaseService):
         :return: user
         :raise CmpApiClientError:
         """
-        uri = self.get_uri("users/%s" % oid)
+        uri = self.get_uri(f"users/{oid}")
         res = self.api_get(uri)
-        self.logger.debug("get user %s: %s" % (oid, truncate(res)))
+        self.logger.debug("get user %s: %s", oid, res)
         return res
 
     def get_user_secret(self, oid):
@@ -481,9 +480,9 @@ class CmpAuthService(CmpBaseService):
         :return: user secret
         :raise CmpApiClientError:
         """
-        uri = self.get_uri("users/%s/secret" % oid)
+        uri = self.get_uri(f"users/{oid}/secret")
         res = self.api_get(uri)
-        self.logger.debug("get user %s secret: %s" % (oid, truncate(res)))
+        self.logger.debug("get user %s secret: %s", oid, res)
         return res
 
     def get_perms_users(self, perms):
@@ -496,7 +495,7 @@ class CmpAuthService(CmpBaseService):
         data = {"size": -1, "perms.N": perms}
         uri = "/v1.0/nas/users"
         res = self.manager.api_request("auth", uri, "GET", urlencode(data, doseq=True), parse=True, silent=True)
-        self.logger.debug("Permissions %s are used by users: %s" % (perms, truncate(res)))
+        self.logger.debug("Permissions %s are used by users: %s", perms, res)
         return res.get("users")
 
     def add_user(self, name, password, desc):
@@ -521,7 +520,7 @@ class CmpAuthService(CmpBaseService):
 
         uri = "/v1.0/nas/users"
         res = self.manager.api_request("auth", uri, "POST", data, parse=True, silent=True)
-        self.logger.debug("Add base user: %s" % name)
+        self.logger.debug("Add base user: %s", name)
         return res
 
     def add_system_user(self, name, password, desc):
@@ -536,7 +535,7 @@ class CmpAuthService(CmpBaseService):
         data = {"user": {"name": name, "password": password, "desc": desc, "system": True}}
         uri = "/v1.0/nas/users"
         res = self.manager.api_request("auth", uri, "POST", data, parse=True, silent=True)
-        self.logger.debug("Add system user: %s" % name)
+        self.logger.debug("Add system user: %s", name)
         return res
 
     def update_user(self, name, new_name, new_pwd, new_desc, uid=None, seckey=None):
@@ -556,9 +555,9 @@ class CmpAuthService(CmpBaseService):
                 "desc": new_desc,
             }
         }
-        uri = "/v1.0/nas/users/%s" % name
+        uri = f"/v1.0/nas/users/{name}"
         res = self.manager.api_request("auth", uri, "PUT", data, parse=True, silent=True)
-        self.logger.debug("Update user: %s" % name)
+        self.logger.debug("Update user: %s", name)
         return res
 
     def remove_user(self, oid):
@@ -568,9 +567,9 @@ class CmpAuthService(CmpBaseService):
         :return:
         :raises CmpApiClientError: raise :class:`CmpApiClientError`
         """
-        uri = "/v1.0/nas/users/%s" % oid
+        uri = f"/v1.0/nas/users/{oid}"
         res = self.manager.api_request("auth", uri, "DELETE", "", silent=True)
-        self.logger.debug("Remove user: %s" % oid)
+        self.logger.debug("Remove user: %s", oid)
         return res
 
     def append_user_roles(self, oid, roles):
@@ -586,9 +585,9 @@ class CmpAuthService(CmpBaseService):
                 "roles": {"append": roles, "remove": []},
             }
         }
-        uri = "/v1.0/nas/users/%s" % oid
+        uri = f"/v1.0/nas/users/{oid}"
         res = self.manager.api_request("auth", uri, "PUT", data, parse=True, silent=True)
-        self.logger.debug("Append roles %s to user %s" % (roles, oid))
+        self.logger.debug("Append roles %s to user %s", roles, oid)
         return res
 
     def remove_user_roles(self, oid, roles):
@@ -604,9 +603,9 @@ class CmpAuthService(CmpBaseService):
                 "roles": {"append": [], "remove": roles},
             }
         }
-        uri = "/v1.0/nas/users/%s" % oid
+        uri = f"/v1.0/nas/users/{oid}"
         res = self.manager.api_request("auth", uri, "PUT", data, parse=True, silent=True)
-        self.logger.debug("Remove roles %s from user %s" % (roles, oid))
+        self.logger.debug("Remove roles %s from user %s", roles, oid)
         return res
 
     def append_user_permissions(self, user, perms):
@@ -618,9 +617,9 @@ class CmpAuthService(CmpBaseService):
         :raises CmpApiClientError: raise :class:`CmpApiClientError`
         """
         data = {"user": {"perms": {"append": perms, "remove": []}}}
-        uri = "/v1.0/nas/users/%s" % user
+        uri = f"/v1.0/nas/users/{user}"
         res = self.manager.api_request("auth", uri, "PUT", data, parse=True, silent=True)
-        self.logger.debug("Append user permissions %s " % truncate(perms))
+        self.logger.debug("Append user permissions %s ", perms)
         return res
 
     def remove_user_permissions(self, user, perms):
@@ -632,9 +631,9 @@ class CmpAuthService(CmpBaseService):
         :raises CmpApiClientError: raise :class:`CmpApiClientError`
         """
         data = {"user": {"perms": {"append": [], "remove": perms}}}
-        uri = "/v1.0/nas/users/%s" % user
+        uri = f"/v1.0/nas/users/{user}"
         res = self.manager.api_request("auth", uri, "PUT", data, parse=True, silent=True)
-        self.logger.debug("Append user permissions %s " % truncate(perms))
+        self.logger.debug("Append user permissions %s ", perms)
         return res
 
     #
@@ -659,7 +658,7 @@ class CmpAuthService(CmpBaseService):
         data = self.format_paginated_query(kwargs, params, aliases=aliases)
         uri = self.get_uri("groups")
         res = self.api_get(uri, data=data)
-        self.logger.debug("get groups: %s" % truncate(res))
+        self.logger.debug("get groups: %s", res)
         return res
 
     def get_group(self, oid):
@@ -669,9 +668,9 @@ class CmpAuthService(CmpBaseService):
         :return: group
         :raise CmpApiClientError:
         """
-        uri = self.get_uri("groups/%s" % oid)
+        uri = self.get_uri(f"groups/{oid}")
         res = self.api_get(uri)
-        self.logger.debug("get group %s: %s" % (oid, truncate(res)))
+        self.logger.debug("get group %s: %s", oid, res)
         return res
 
     def get_perms_groups(self, perms):
@@ -684,7 +683,7 @@ class CmpAuthService(CmpBaseService):
         data = {"size": -1, "perms.N": perms}
         uri = "/v1.0/nas/groups"
         res = self.manager.api_request("auth", uri, "GET", urlencode(data, doseq=True), parse=True, silent=True)
-        self.logger.debug("Permissions %s are used by groups: %s" % (perms, truncate(res)))
+        self.logger.debug("Permissions %s are used by groups: %s", perms, res)
         return res.get("groups")
 
     def append_group_roles(self, oid, roles):
@@ -700,9 +699,9 @@ class CmpAuthService(CmpBaseService):
                 "roles": {"append": roles, "remove": []},
             }
         }
-        uri = "/v1.0/nas/groups/%s" % oid
+        uri = f"/v1.0/nas/groups/{oid}"
         res = self.manager.api_request("auth", uri, "PUT", data, parse=True, silent=True)
-        self.logger.debug("Append roles %s to group %s" % (roles, oid))
+        self.logger.debug("Append roles %s to group %s", roles, oid)
         return res
 
     def remove_group_roles(self, oid, roles):
@@ -718,9 +717,9 @@ class CmpAuthService(CmpBaseService):
                 "roles": {"append": [], "remove": roles},
             }
         }
-        uri = "/v1.0/nas/groups/%s" % oid
+        uri = f"/v1.0/nas/groups/{oid}"
         res = self.manager.api_request("auth", uri, "PUT", data, parse=True, silent=True)
-        self.logger.debug("Remove roles %s from group %s" % (roles, oid))
+        self.logger.debug("Remove roles %s from group %s", roles, oid)
         return res
 
     def append_group_permissions(self, group, perms):
@@ -732,9 +731,9 @@ class CmpAuthService(CmpBaseService):
         :raises CmpApiClientError: raise :class:`CmpApiClientError`
         """
         data = {"group": {"perms": {"append": perms, "remove": []}}}
-        uri = "/v1.0/nas/groups/%s" % group
+        uri = f"/v1.0/nas/groups/{group}"
         res = self.manager.api_request("auth", uri, "PUT", data, parse=True, silent=True)
-        self.logger.debug("Append group permissions %s " % truncate(perms))
+        self.logger.debug("Append group permissions %s ", perms)
         return res
 
     def remove_group_permissions(self, group, perms):
@@ -746,7 +745,7 @@ class CmpAuthService(CmpBaseService):
         :raises CmpApiClientError: raise :class:`CmpApiClientError`
         """
         data = {"group": {"perms": {"append": [], "remove": perms}}}
-        uri = "/v1.0/nas/groups/%s" % group
+        uri = f"/v1.0/nas/groups/{group}"
         res = self.manager.api_request("auth", uri, "PUT", data, parse=True, silent=True)
-        self.logger.debug("Append group permissions %s " % truncate(perms))
+        self.logger.debug("Append group permissions %s ", perms)
         return res
